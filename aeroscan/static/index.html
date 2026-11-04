@@ -1,0 +1,1185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AeroScan · Exterior inspection</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+:root{
+  --bg:#e3e4e6; --panel:#f6f6f4; --white:#fff; --ink:#0e0f11; --ink-2:#3a3c41; --muted:#86888e; --faint:#b4b6ba;
+  --line:rgba(14,15,17,.08); --line-2:rgba(14,15,17,.14); --soft:#ececea; --soft-2:#e4e4e1; --steel:#d2d9e1; --steel-ink:#46515e;
+  --r-xl:28px; --r-lg:22px; --r-md:16px; --r-sm:11px;
+  --sh-1:0 1px 1px rgba(16,18,22,.04),0 2px 6px rgba(16,18,22,.05);
+  --sh-2:0 1px 2px rgba(16,18,22,.05),0 8px 22px rgba(16,18,22,.07),0 22px 44px -18px rgba(16,18,22,.12);
+  --sh-3:0 2px 6px rgba(16,18,22,.06),0 24px 60px -12px rgba(16,18,22,.22);
+  --ease:cubic-bezier(.2,.7,.1,1);
+  --c-crack:#e5484d; --c-corrosion:#f76b15; --c-dent:#f5a524; --c-fastener:#7c5cff; --c-paint:#14b8a6; --c-scratch:#3b82f6; --c-other:#8b8d98;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:Manrope,"Plus Jakarta Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  font-size:14px;line-height:1.4;-webkit-font-smoothing:antialiased;font-feature-settings:"ss01","cv11";overflow:hidden}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer;background:none;border:0}
+.num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
+svg.i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;flex:none}
+
+/* ------------------------------------------------------------ shell */
+.shell{position:absolute;inset:12px;background:var(--panel);border-radius:var(--r-xl);box-shadow:var(--sh-2),inset 0 0 0 1px rgba(255,255,255,.7);
+  display:grid;grid-template-rows:56px 1fr;padding:14px clamp(18px,2vw,34px) clamp(16px,2vh,26px);min-height:700px;overflow:hidden}
+.top{display:grid;grid-template-columns:1fr auto 1fr;align-items:center}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:-.02em;font-size:15px}
+.mark{width:36px;height:36px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;box-shadow:0 2px 6px rgba(0,0,0,.18)}
+.mark svg{width:19px;height:19px;stroke-width:1.5}
+.tabs{position:relative;display:flex;gap:2px;padding:4px;background:var(--white);border-radius:999px;box-shadow:var(--sh-1),inset 0 0 0 1px var(--line)}
+.tab{position:relative;z-index:1;height:36px;padding:0 20px;border-radius:999px;font-weight:600;font-size:13.5px;color:var(--ink-2);letter-spacing:-.01em;transition:color .3s var(--ease)}
+.tab:hover{color:var(--ink)}
+.tab.active{color:#fff}
+.tab-ind{position:absolute;top:4px;bottom:4px;left:0;width:0;border-radius:999px;background:var(--ink);box-shadow:0 4px 12px -2px rgba(0,0,0,.3);transition:transform .45s var(--ease),width .45s var(--ease)}
+.top-right{display:flex;justify-content:flex-end;align-items:center;gap:10px}
+.pill{display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 14px;border-radius:999px;background:var(--white);box-shadow:var(--sh-1),inset 0 0 0 1px var(--line);font-size:12.5px;font-weight:600;white-space:nowrap}
+.pill .sub{color:var(--muted);font-weight:500}
+.avatar{width:36px;height:36px;border-radius:50%;background:var(--soft-2);display:grid;place-items:center;font-weight:700;font-size:12px;letter-spacing:.02em;box-shadow:inset 0 0 0 1px var(--line)}
+
+/* ------------------------------------------------------------ views */
+main{position:relative;min-height:0}
+.view{position:absolute;inset:0;opacity:0;transform:translateY(10px);pointer-events:none;transition:opacity .4s var(--ease),transform .5s var(--ease);display:flex;flex-direction:column;min-height:0}
+.view.active{opacity:1;transform:none;pointer-events:auto}
+.h-title{font-size:clamp(40px,4.4vw,80px);font-weight:800;letter-spacing:-.055em;line-height:.95}
+.h-2{font-size:clamp(20px,1.6vw,28px);font-weight:750;font-weight:800;letter-spacing:-.035em}
+.eyebrow{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.muted{color:var(--muted)}
+
+/* circular buttons */
+.circ{width:46px;height:46px;border-radius:50%;background:var(--white);display:grid;place-items:center;color:var(--ink);box-shadow:var(--sh-1),inset 0 0 0 1px var(--line);
+  transition:transform .25s var(--ease),box-shadow .25s var(--ease),background .2s;position:relative}
+.circ:hover{transform:translateY(-2px);box-shadow:var(--sh-2),inset 0 0 0 1px var(--line)}
+.circ:active{transform:translateY(0) scale(.97)}
+.circ.dark{background:var(--ink);color:#fff;box-shadow:0 6px 16px -4px rgba(0,0,0,.35)}
+.circ.sm{width:36px;height:36px}
+.circ.sm svg.i{width:17px;height:17px}
+.circ.on{background:var(--ink);color:#fff}
+.circ[disabled]{opacity:.4;pointer-events:none}
+.circ .tip{position:absolute;top:calc(100% + 8px);left:50%;transform:translate(-50%,-4px);opacity:0;pointer-events:none;white-space:nowrap;font-size:11.5px;font-weight:600;
+  background:rgba(14,15,17,.88);color:#fff;padding:5px 9px;border-radius:8px;transition:.2s var(--ease);z-index:20}
+.circ:hover .tip{opacity:1;transform:translate(-50%,0)}
+.btn{height:40px;padding:0 18px;border-radius:999px;font-weight:700;font-size:13px;display:inline-flex;align-items:center;gap:8px;background:var(--white);
+  box-shadow:var(--sh-1),inset 0 0 0 1px var(--line);transition:transform .25s var(--ease),box-shadow .25s var(--ease)}
+.btn:hover{transform:translateY(-1px);box-shadow:var(--sh-2),inset 0 0 0 1px var(--line)}
+.btn.dark{background:var(--ink);color:#fff;box-shadow:0 6px 16px -6px rgba(0,0,0,.4)}
+.btn svg.i{width:17px;height:17px}
+
+/* status chip */
+.status{display:inline-flex;align-items:center;gap:9px;height:32px;padding:0 14px 0 12px;border-radius:999px;background:var(--white);box-shadow:var(--sh-1),inset 0 0 0 1px var(--line);
+  font-size:12.5px;font-weight:600;max-width:420px;white-space:nowrap;overflow:hidden}
+.status .t{overflow:hidden;text-overflow:ellipsis}
+.status .sub{color:var(--muted);font-weight:500}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--faint);position:relative;flex:none}
+.dot.live{background:#1fbf6a}.dot.connecting{background:#e2a336}.dot.error{background:var(--c-crack)}.dot.finished{background:var(--ink)}
+.dot.live::after,.dot.connecting::after{content:"";position:absolute;inset:-4px;border-radius:50%;border:2px solid currentColor;color:inherit;animation:ping 1.6s var(--ease) infinite}
+.dot.live::after{border-color:#1fbf6a}.dot.connecting::after{border-color:#e2a336}
+@keyframes ping{0%{transform:scale(.5);opacity:.9}100%{transform:scale(1.6);opacity:0}}
+
+/* ------------------------------------------------------------ exterior */
+#view-exterior{display:grid;grid-template-rows:auto minmax(0,1fr) auto clamp(150px,22vh,232px);gap:clamp(8px,1.4vh,16px);padding-top:clamp(6px,1.4vh,18px)}
+.ext-head{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:20px}
+.ext-title{display:flex;align-items:center;gap:16px;min-width:0}
+.ext-title .meta{display:flex;flex-direction:column;gap:8px;min-width:0}
+.ctrl-row{display:flex;gap:12px;align-items:center;padding:6px;border-radius:999px}
+.ctrl-row .sep{width:1px;height:26px;background:var(--line-2);margin:0 4px}
+.ext-hint{justify-self:end;text-align:right;font-size:12px;color:var(--muted);max-width:260px;line-height:1.45}
+.ext-hint b{color:var(--ink);font-weight:700}
+.stage{position:relative;min-height:0}
+.stage svg.air{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.edge{position:absolute;left:0;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:10px;z-index:3}
+.zone-hit{fill:transparent;cursor:pointer}
+.zone-hl{opacity:0;transition:opacity .45s var(--ease)}
+.zone-hl.hover{opacity:.45}.zone-hl.sel{opacity:1}
+.zone-tag{font-size:12px;font-weight:700;letter-spacing:-.01em;fill:var(--ink);opacity:0;transition:opacity .4s var(--ease)}
+.zone-tag.sel{opacity:1}
+.pin{transition:opacity .35s var(--ease);cursor:pointer}
+.pin.hide{opacity:0;pointer-events:none}
+.pin .bub{transform-box:fill-box;transform-origin:center;transition:transform .3s var(--ease)}
+.pin.bump .bub{animation:bump .7s var(--ease)}
+@keyframes bump{0%{transform:scale(1)}35%{transform:scale(1.35)}100%{transform:scale(1)}}
+.pin text{font-size:12.5px;font-weight:800;fill:#fff;text-anchor:middle;dominant-baseline:central;font-variant-numeric:tabular-nums}
+#drone{transition:transform .9s var(--ease)}
+#droneBob{animation:bob 2.4s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+#droneBeam{transition:opacity .4s}
+.rotor{transform-box:fill-box;transform-origin:center;animation:spin .25s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.cut{width:100%;height:100%;border-radius:22px;overflow:hidden;position:relative;background:#16181b;cursor:zoom-in;
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.4),inset 0 8px 18px rgba(0,0,0,.45)}
+.cut img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .5s}
+.cut.has img{opacity:1}
+.cut-empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:#e9eaec;text-align:center;
+  background:radial-gradient(120% 140% at 50% 0%,#2a2e33 0%,#141619 70%);transition:opacity .4s}
+.cut.has .cut-empty{opacity:0;pointer-events:none}
+.cut-empty b{font-size:11px;font-weight:700;letter-spacing:-.01em}
+.cut-empty span{font-size:7.5px;color:#9a9ca1;font-weight:500}
+.cut-empty .scanline{position:absolute;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.35),transparent);animation:scan 3.2s ease-in-out infinite}
+@keyframes scan{0%{top:15%}50%{top:85%}100%{top:15%}}
+.cut-live{position:absolute;left:9px;top:8px;display:none;align-items:center;gap:4px;font-size:7px;font-weight:800;letter-spacing:.12em;color:#fff;background:rgba(0,0,0,.45);padding:2px 6px;border-radius:99px;backdrop-filter:blur(6px)}
+.cut-live i{width:5px;height:5px;border-radius:50%;background:#ff5a5f;animation:blink 1.2s infinite}
+@keyframes blink{50%{opacity:.25}}
+.cut.live .cut-live{display:flex}
+
+/* sections row */
+.sec-row{display:flex;align-items:center;gap:16px;justify-content:center}
+.sec-row .lbl{font-size:13px;font-weight:700;letter-spacing:-.01em}
+.fus{position:relative;height:44px;width:min(760px,62vw);padding:4px 30px 4px 6px}
+.fus svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.fus path{fill:var(--white);stroke:var(--line-2);stroke-width:1;vector-effect:non-scaling-stroke;filter:drop-shadow(0 2px 6px rgba(16,18,22,.06))}
+.seg{position:relative;display:flex;height:100%}
+.seg-ind{position:absolute;top:0;bottom:0;left:0;width:0;border-radius:999px;background:var(--ink);transition:transform .45s var(--ease),width .45s var(--ease)}
+.seg button{position:relative;z-index:1;flex:1;border-radius:999px;font-size:12.5px;font-weight:650;font-weight:600;color:var(--ink-2);display:flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap;transition:color .3s}
+.seg button.active{color:#fff}
+.seg button .c{min-width:18px;height:18px;padding:0 5px;border-radius:99px;font-size:10.5px;font-weight:800;display:inline-grid;place-items:center;background:var(--soft);color:var(--ink-2);transition:.3s}
+.seg button.active .c{background:rgba(255,255,255,.18);color:#fff}
+.seg button .c:empty{display:none}
+
+/* bottom cards */
+.bottom{display:grid;grid-template-columns:clamp(260px,24vw,380px) 1fr;gap:clamp(12px,1.2vw,18px);min-height:0}
+.count-card{position:relative;border-radius:var(--r-lg);background:linear-gradient(160deg,#dbe1e8 0%,#cdd5de 100%);padding:16px 18px;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.5),var(--sh-1)}
+.count-card .big{font-size:clamp(50px,5.2vw,96px);font-weight:800;letter-spacing:-.06em;line-height:.85;color:var(--ink)}
+.count-card .lab{font-size:12px;font-weight:700;color:var(--steel-ink);letter-spacing:-.005em}
+.count-card .go{position:absolute;right:14px;top:14px}
+.count-card .row{display:flex;align-items:flex-end;justify-content:space-between;gap:10px}
+.count-card .reg{font-size:13px;font-weight:800;letter-spacing:-.01em}
+.count-card .type{font-size:11.5px;color:var(--steel-ink);font-weight:500}
+.hbar{height:5px;border-radius:99px;background:rgba(14,15,17,.1);overflow:hidden;margin-top:6px;width:110px}
+.hbar i{display:block;height:100%;background:var(--ink);border-radius:99px;transition:width .8s var(--ease)}
+.health-mini{text-align:right}
+.health-mini .v{font-size:22px;font-weight:800;letter-spacing:-.04em;line-height:1}
+.health-mini .l{font-size:10.5px;font-weight:700;color:var(--steel-ink)}
+.adv{font-size:9px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--steel-ink);opacity:.75}
+.map-card{border-radius:var(--r-lg);background:var(--white);box-shadow:var(--sh-1),inset 0 0 0 1px var(--line);padding:12px 14px 14px 18px;display:flex;flex-direction:column;gap:10px;min-height:0;min-width:0}
+.map-head{display:flex;align-items:center;gap:14px}
+.map-head .h{font-size:16px;font-weight:800;letter-spacing:-.03em}
+.legend{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:11px;font-weight:600;color:var(--ink-2);flex:1;min-width:0}
+.legend span{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.legend i{width:8px;height:8px;border-radius:3px}
+.map{flex:1;display:grid;grid-template-columns:30px repeat(5,minmax(0,1fr)) 30px;border-radius:18px;background:var(--panel);box-shadow:inset 0 0 0 1px var(--line);overflow:hidden;min-height:0}
+.cap{background:repeating-linear-gradient(135deg,rgba(14,15,17,.13) 0 1px,transparent 1px 6px)}
+.cap.l{border-right:1px solid var(--line)}
+.col{display:flex;flex-direction:column;min-height:0;border-right:1px solid var(--line);padding:8px 8px 6px;transition:background .4s var(--ease)}
+.col:nth-last-child(2){border-right:1px solid var(--line)}
+.col.sel{background:rgba(210,217,225,.38)}
+.col-h{display:flex;justify-content:space-between;align-items:baseline;font-size:10.5px;font-weight:700;color:var(--muted);letter-spacing:.02em;margin-bottom:6px;white-space:nowrap;gap:4px}
+.col-h b{color:var(--ink);font-weight:800}
+.col-h span{overflow:hidden;text-overflow:ellipsis}
+.chips{display:flex;flex-wrap:wrap;gap:4px;align-content:flex-start;overflow:auto;scrollbar-width:none;min-height:0}
+.chips::-webkit-scrollbar{display:none}
+.chip{height:22px;padding:0 7px;border-radius:7px;font-size:10px;font-weight:800;color:#fff;letter-spacing:.01em;display:inline-flex;align-items:center;
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.08);transition:transform .2s var(--ease),box-shadow .2s}
+.chip:hover{transform:translateY(-1.5px);box-shadow:0 4px 10px -2px rgba(0,0,0,.25)}
+.chip.new{animation:newchip 1.8s var(--ease)}
+@keyframes newchip{0%{transform:scale(.4);opacity:0;box-shadow:0 0 0 0 rgba(14,15,17,.4)}25%{transform:scale(1.12);opacity:1}50%{box-shadow:0 0 0 7px rgba(14,15,17,0)}100%{transform:scale(1)}}
+.col-empty{font-size:10.5px;color:var(--faint);font-weight:600}
+
+/* ------------------------------------------------------------ popovers / modal / toast */
+.glass{background:rgba(255,255,255,.78);backdrop-filter:blur(22px) saturate(1.4);-webkit-backdrop-filter:blur(22px) saturate(1.4);box-shadow:var(--sh-3),inset 0 0 0 1px rgba(255,255,255,.65),0 0 0 1px var(--line)}
+.pop{position:fixed;z-index:40;width:320px;border-radius:20px;padding:16px;opacity:0;transform:translateY(-6px) scale(.98);pointer-events:none;transition:.25s var(--ease)}
+.pop.open{opacity:1;transform:none;pointer-events:auto}
+.pop h4{font-size:14px;font-weight:800;letter-spacing:-.02em;margin-bottom:2px}
+.pop p{font-size:12px;color:var(--muted);margin-bottom:12px}
+.pop .actions{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
+.field{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+.field label{font-size:11px;font-weight:700;color:var(--ink-2);letter-spacing:.02em}
+.inp{height:40px;border-radius:12px;border:0;background:var(--white);box-shadow:inset 0 0 0 1px var(--line-2);padding:0 13px;font-size:13px;font-weight:600;outline:none;transition:box-shadow .2s}
+.inp:focus{box-shadow:inset 0 0 0 1.5px var(--ink),0 0 0 4px rgba(14,15,17,.06)}
+.inp::placeholder{color:var(--faint);font-weight:500}
+.sel-wrap{position:relative}
+.sel-wrap select{appearance:none;-webkit-appearance:none;width:100%;padding-right:34px;cursor:pointer}
+.sel-wrap svg{position:absolute;right:12px;top:50%;transform:translateY(-50%);width:14px;height:14px;pointer-events:none}
+.range{display:flex;align-items:center;gap:12px}
+.range input{flex:1;-webkit-appearance:none;appearance:none;height:22px;background:transparent;cursor:pointer}
+.range input::-webkit-slider-runnable-track{height:4px;border-radius:99px;background:linear-gradient(90deg,var(--ink) var(--p,50%),var(--soft-2) var(--p,50%))}
+.range input::-moz-range-track{height:4px;border-radius:99px;background:var(--soft-2)}
+.range input::-moz-range-progress{height:4px;border-radius:99px;background:var(--ink)}
+.range input::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;margin-top:-8px;border-radius:50%;background:#fff;box-shadow:0 0 0 1px var(--line-2),0 2px 6px rgba(0,0,0,.18);transition:transform .2s}
+.range input::-moz-range-thumb{width:20px;height:20px;border:0;border-radius:50%;background:#fff;box-shadow:0 0 0 1px var(--line-2),0 2px 6px rgba(0,0,0,.18)}
+.range input:active::-webkit-slider-thumb{transform:scale(1.12)}
+.range .v{font-weight:800;font-size:14px;min-width:42px;text-align:right}
+.scrim{position:fixed;inset:0;z-index:50;background:rgba(14,15,17,.32);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);opacity:0;pointer-events:none;transition:opacity .3s var(--ease);display:grid;place-items:center;padding:30px}
+.scrim.open{opacity:1;pointer-events:auto}
+.modal{border-radius:26px;overflow:hidden;transform:translateY(12px) scale(.98);transition:transform .4s var(--ease);max-width:min(1100px,94vw);max-height:90vh}
+.scrim.open .modal{transform:none}
+.snap{display:grid;grid-template-columns:minmax(0,1.5fr) 300px;background:var(--white)}
+.snap .img{background:#121315;display:grid;place-items:center;min-height:360px;max-height:80vh}
+.snap .img img{max-width:100%;max-height:80vh;display:block}
+.snap .info{padding:22px 22px 18px;display:flex;flex-direction:column;gap:14px}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:9px 14px;font-size:12.5px}
+.kv dt{color:var(--muted);font-weight:600}.kv dd{font-weight:700;text-align:right}
+.cls-tag{display:inline-flex;align-items:center;gap:8px;font-size:22px;font-weight:800;letter-spacing:-.035em;text-transform:capitalize}
+.cls-tag i{width:12px;height:12px;border-radius:4px}
+.feed-modal{background:#0d0e10;position:relative}
+.feed-modal img{display:block;max-width:92vw;max-height:84vh;min-width:300px;min-height:200px}
+.feed-modal .bar{position:absolute;left:16px;right:16px;top:14px;display:flex;justify-content:space-between;align-items:center;pointer-events:none}
+.feed-modal .bar > *{pointer-events:auto}
+.toasts{position:fixed;right:26px;top:80px;z-index:60;display:flex;flex-direction:column;gap:8px;align-items:flex-end}
+.toast{border-radius:16px;padding:11px 14px 11px 12px;display:flex;align-items:center;gap:11px;font-size:12.5px;font-weight:600;min-width:240px;max-width:380px;animation:tin .5s var(--ease)}
+.toast i.sw{width:10px;height:30px;border-radius:5px;flex:none}
+.toast .s{color:var(--muted);font-weight:500;font-size:11.5px}
+.toast.out{opacity:0;transform:translateX(12px);transition:.35s var(--ease)}
+@keyframes tin{from{opacity:0;transform:translateY(-8px) scale(.97)}}
+
+/* ------------------------------------------------------------ defects */
+.page{padding-top:clamp(10px,2vh,22px);gap:18px;overflow:hidden}
+.page-head{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap}
+.page-head .lhs{display:flex;align-items:baseline;gap:16px}
+.page-head .count{font-size:clamp(20px,1.8vw,30px);font-weight:800;letter-spacing:-.04em;color:var(--muted)}
+.filters{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.fpill{height:34px;padding:0 13px;border-radius:999px;background:var(--white);box-shadow:inset 0 0 0 1px var(--line);font-size:12px;font-weight:700;display:inline-flex;align-items:center;gap:7px;transition:.25s var(--ease);text-transform:capitalize}
+.fpill:hover{box-shadow:inset 0 0 0 1px var(--line-2),var(--sh-1)}
+.fpill.on{background:var(--ink);color:#fff;box-shadow:none}
+.fpill i{width:8px;height:8px;border-radius:3px}
+.fpill .n{color:var(--muted);font-weight:700}.fpill.on .n{color:rgba(255,255,255,.6)}
+.filters .sel-wrap .inp{height:34px;border-radius:999px;font-size:12px;font-weight:700;padding-left:14px}
+.grid{flex:1;overflow:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:16px;align-content:start;padding:4px 4px 20px;margin:0 -4px}
+.dcard{border-radius:20px;background:var(--white);box-shadow:var(--sh-1),inset 0 0 0 1px var(--line);overflow:hidden;text-align:left;transition:transform .3s var(--ease),box-shadow .3s var(--ease);display:flex;flex-direction:column}
+.dcard:hover{transform:translateY(-3px);box-shadow:var(--sh-2),inset 0 0 0 1px var(--line)}
+.dcard .ph{aspect-ratio:4/3;background:#151618 center/cover no-repeat;position:relative}
+.dcard .ph .tag{position:absolute;left:10px;top:10px;height:24px;padding:0 9px;border-radius:99px;display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:800;color:#fff;text-transform:capitalize}
+.dcard .ph .id{position:absolute;right:10px;top:10px;font-size:11px;font-weight:800;color:#fff;background:rgba(0,0,0,.45);backdrop-filter:blur(6px);padding:4px 8px;border-radius:99px}
+.dcard .bd{padding:12px 14px 14px;display:grid;grid-template-columns:1fr auto;gap:2px 10px;align-items:end}
+.dcard .sec{font-size:13px;font-weight:800;letter-spacing:-.015em}
+.dcard .tm{font-size:11px;color:var(--muted);font-weight:600}
+.dcard .cf{grid-row:1/3;grid-column:2;font-size:24px;font-weight:800;letter-spacing:-.05em}
+.dcard .cf small{font-size:12px;color:var(--muted);letter-spacing:0}
+.empty{flex:1;display:grid;place-items:center;text-align:center;color:var(--muted)}
+.empty .in{display:flex;flex-direction:column;align-items:center;gap:10px;max-width:340px}
+.empty .ic{width:64px;height:64px;border-radius:50%;background:var(--white);display:grid;place-items:center;box-shadow:var(--sh-1),inset 0 0 0 1px var(--line);color:var(--ink)}
+.empty b{color:var(--ink);font-size:16px;font-weight:800;letter-spacing:-.02em}
+
+/* ------------------------------------------------------------ summary */
+.sum{display:grid;grid-template-columns:minmax(300px,.85fr) 1.6fr;gap:18px;flex:1;min-height:0}
+.card{border-radius:var(--r-lg);background:var(--white);box-shadow:var(--sh-1),inset 0 0 0 1px var(--line);padding:22px}
+.gauge{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center}
+.gauge svg{width:min(260px,30vh);height:auto}
+.gauge .score{font-size:64px;font-weight:800;letter-spacing:-.06em}
+.gauge .glabel{font-size:18px;font-weight:800;letter-spacing:-.03em}
+.ring-bg{fill:none;stroke:var(--soft);stroke-width:14}
+.ring-fg{fill:none;stroke:var(--ink);stroke-width:14;stroke-linecap:round;transition:stroke-dashoffset 1.1s var(--ease)}
+.sum-r{display:flex;flex-direction:column;gap:16px;min-height:0}
+.meta-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.meta-row div{display:flex;flex-direction:column;gap:3px}
+.meta-row b{font-size:15px;font-weight:800;letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+table.mx{width:100%;border-collapse:collapse;font-size:12.5px}
+.mx th,.mx td{padding:9px 10px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+.mx th:first-child,.mx td:first-child{text-align:left}
+.mx thead th{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.mx thead th i{display:inline-block;width:7px;height:7px;border-radius:2px;margin-right:5px;vertical-align:1px}
+.mx td{font-weight:700}
+.mx td.z{color:var(--faint);font-weight:500}
+.mx tfoot td{font-weight:800;border-bottom:0}
+.rec{display:flex;gap:14px;align-items:flex-start;padding:16px 18px;border-radius:18px;background:var(--panel);box-shadow:inset 0 0 0 1px var(--line);font-size:13.5px;font-weight:600;line-height:1.5}
+.rec .ic{width:34px;height:34px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;flex:none}
+.print-only{display:none}
+
+/* ------------------------------------------------------------ aircraft */
+.ac{display:grid;grid-template-columns:minmax(320px,1fr) minmax(320px,1fr);gap:18px;align-items:start;overflow:auto}
+.ac .card h3{font-size:18px;font-weight:800;letter-spacing:-.03em;margin-bottom:4px}
+.ac .card > p{font-size:12.5px;color:var(--muted);margin-bottom:18px}
+.steps{list-style:none;counter-reset:s;display:flex;flex-direction:column;gap:12px}
+.steps li{counter-increment:s;display:grid;grid-template-columns:28px 1fr;gap:12px;font-size:13px;line-height:1.5}
+.steps li::before{content:counter(s);width:28px;height:28px;border-radius:50%;background:var(--soft);display:grid;place-items:center;font-weight:800;font-size:12px}
+code{font-family:ui-monospace,"SF Mono",Consolas,monospace;font-size:11.5px;background:var(--soft);padding:2px 6px;border-radius:6px}
+.classes{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.classes span{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px;border-radius:99px;background:var(--panel);box-shadow:inset 0 0 0 1px var(--line);font-size:11.5px;font-weight:700;text-transform:capitalize}
+.classes i{width:8px;height:8px;border-radius:3px}
+.saved{font-size:11.5px;color:var(--muted);font-weight:600;opacity:0;transition:opacity .3s}
+.saved.on{opacity:1}
+
+/* ------------------------------------------------------------ responsive / projector */
+@media (max-height:800px){
+  .shell{grid-template-rows:50px 1fr;padding-top:10px}
+  .circ{width:42px;height:42px}
+  .h-title{font-size:clamp(38px,4vw,60px)}
+}
+@media (max-width:1200px){ .ext-hint{display:none} .ext-head{grid-template-columns:auto 1fr} .ctrl-row{justify-self:end} }
+
+/* ------------------------------------------------------------ print */
+@media print{
+  @page{margin:14mm}
+  body{background:#fff;overflow:visible}
+  .shell{position:static;box-shadow:none;padding:0;display:block;min-height:0;background:#fff}
+  .top,.no-print,.toasts,.pop,.scrim{display:none!important}
+  .view{display:none;position:static;opacity:1;transform:none}
+  #view-summary{display:flex!important}
+  .sum{display:block}
+  .card{box-shadow:none;border:1px solid #ddd;break-inside:avoid;margin-bottom:12px}
+  .gauge{flex-direction:row;justify-content:flex-start;gap:30px;text-align:left}
+  .gauge svg{width:150px}
+  .print-only{display:block}
+  .grid,.empty{display:none}
+}
+</style>
+</head>
+<body>
+<div class="shell">
+  <header class="top">
+    <div class="brand"><span class="mark" data-i="logo"></span>AeroScan</div>
+    <nav class="tabs" role="tablist" id="tabs">
+      <span class="tab-ind" id="tabInd"></span>
+      <button class="tab" data-tab="aircraft" role="tab">Aircraft</button>
+      <button class="tab active" data-tab="exterior" role="tab">Exterior</button>
+      <button class="tab" data-tab="defects" role="tab">Defects</button>
+      <button class="tab" data-tab="summary" role="tab">Summary</button>
+    </nav>
+    <div class="top-right">
+      <span class="pill" id="modelPill" title="Detection model"><span class="dot" id="modelDot"></span><span id="modelTxt">Loading model</span></span>
+      <span class="avatar" id="avatar" title="Inspector">—</span>
+    </div>
+  </header>
+
+  <main>
+    <!-- ======================================================= EXTERIOR -->
+    <section class="view active" id="view-exterior">
+      <div class="ext-head">
+        <div class="ext-title">
+          <button class="circ" id="backBtn" aria-label="Back to aircraft"><span data-i="back"></span></button>
+          <div class="meta">
+            <h1 class="h-title">Exterior</h1>
+          </div>
+          <span class="status" id="status"><span class="dot" id="statusDot"></span><span class="t" id="statusTxt">Not connected</span></span>
+        </div>
+        <div class="ctrl-row" id="ctrls">
+          <button class="circ" data-pop="rtsp" aria-label="Drone feed"><span data-i="drone"></span><span class="tip">Drone feed</span></button>
+          <button class="circ" id="uploadBtn" aria-label="Upload"><span data-i="upload"></span><span class="tip">Upload image / video</span></button>
+          <button class="circ" data-pop="screen" aria-label="Screen mirror"><span data-i="mirror"></span><span class="tip">Screen mirror</span></button>
+          <button class="circ" data-pop="webcam" aria-label="Webcam"><span data-i="webcam"></span><span class="tip">Webcam</span></button>
+          <span class="sep"></span>
+          <button class="circ" id="stopBtn" aria-label="Stop"><span data-i="stop"></span><span class="tip">Stop</span></button>
+          <button class="circ" data-pop="settings" aria-label="Settings"><span data-i="settings"></span><span class="tip">Settings</span></button>
+        </div>
+        <div class="ext-hint" id="extHint">Select the section the drone is inspecting. New defects are tagged to <b id="hintSec">Nose</b>.</div>
+      </div>
+
+      <div class="stage" id="stage">
+        <div class="edge">
+          <button class="circ sm" id="expandBtn" aria-label="Expand feed"><span data-i="expand"></span><span class="tip">Expand feed</span></button>
+          <button class="circ sm" id="stillBtn" aria-label="Capture still"><span data-i="camera"></span><span class="tip">Capture still</span></button>
+        </div>
+        <svg class="air" viewBox="0 -24 1200 384" preserveAspectRatio="xMidYMid meet" aria-label="Aircraft exterior, side view">
+          <defs>
+            <linearGradient id="gBody" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#ffffff"/><stop offset=".42" stop-color="#f6f7f8"/><stop offset=".8" stop-color="#e1e4e8"/><stop offset="1" stop-color="#c9cdd3"/>
+            </linearGradient>
+            <linearGradient id="gWing" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#f1f2f4"/><stop offset="1" stop-color="#c3c8ce"/>
+            </linearGradient>
+            <linearGradient id="gEng" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#fbfbfc"/><stop offset=".55" stop-color="#e2e5e8"/><stop offset="1" stop-color="#aeb4bb"/>
+            </linearGradient>
+            <linearGradient id="gFin" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#f7f8f9"/><stop offset="1" stop-color="#d4d8dd"/>
+            </linearGradient>
+            <radialGradient id="gIntake" cx=".55" cy=".45" r=".7"><stop offset="0" stop-color="#4a4e54"/><stop offset="1" stop-color="#17191c"/></radialGradient>
+            <linearGradient id="gHl" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#8fa2b8" stop-opacity=".34"/><stop offset="1" stop-color="#8fa2b8" stop-opacity=".16"/>
+            </linearGradient>
+            <linearGradient id="gWin" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4b5058"/><stop offset="1" stop-color="#25282d"/></linearGradient>
+            <filter id="fShadow" x="-20%" y="-200%" width="140%" height="500%"><feGaussianBlur stdDeviation="9"/></filter>
+            <filter id="fSoft" x="-10%" y="-10%" width="120%" height="140%"><feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#1a1d22" flood-opacity=".10"/></filter>
+            <clipPath id="cAir">
+              <path d="M190 120 L930 120 C1010 120 1075 112 1140 96 L1150 100 L1146 124 C1100 160 1010 226 860 240 L210 240 C120 240 52 226 48 196 C44 165 100 122 190 120 Z"/>
+              <path d="M985 122 C1020 108 1058 62 1083 18 L1126 15 C1133 15 1137 19 1137 26 L1146 104 L1100 120 Z"/>
+              <path d="M1040 166 L1118 156 L1172 182 L1158 189 Z"/>
+              <path d="M612 212 C660 209 720 207 768 210 L926 296 L900 304 Z"/>
+              <path d="M505 238 L635 242 C660 244 664 286 635 288 L505 292 C478 292 474 238 505 238 Z"/>
+            </clipPath>
+          </defs>
+
+          <!-- ground shadow -->
+          <ellipse cx="610" cy="350" rx="520" ry="9" fill="#1a1d22" opacity=".16" filter="url(#fShadow)"/>
+          <ellipse cx="610" cy="349" rx="380" ry="3.5" fill="#1a1d22" opacity=".12" filter="url(#fShadow)"/>
+
+          <g filter="url(#fSoft)">
+            <!-- landing gear (behind body) -->
+            <g stroke="#9aa0a7" stroke-width="5" stroke-linecap="round">
+              <path d="M200 236 L200 322"/><path d="M712 236 L712 314"/>
+            </g>
+            <g stroke="#b9bec4" stroke-width="2.5"><path d="M200 262 L218 238"/><path d="M712 262 L736 238"/></g>
+            <g>
+              <circle cx="200" cy="330" r="15" fill="#22252a"/><circle cx="200" cy="330" r="6" fill="#8b9097"/>
+              <circle cx="698" cy="326" r="19" fill="#22252a"/><circle cx="698" cy="326" r="7.5" fill="#8b9097"/>
+              <circle cx="728" cy="326" r="19" fill="#2b2e33"/><circle cx="728" cy="326" r="7.5" fill="#9ca1a7"/>
+            </g>
+
+            <!-- horizontal stabilizer (far) -->
+            <path d="M1050 150 L1110 143 L1150 160 L1140 164 Z" fill="#d9dce0"/>
+            <!-- vertical fin -->
+            <path d="M985 122 C1020 108 1058 62 1083 18 L1126 15 C1133 15 1137 19 1137 26 L1146 104 L1100 120 Z" fill="url(#gFin)" stroke="rgba(14,15,17,.10)"/>
+            <path d="M1092 40 L1134 37" stroke="rgba(14,15,17,.10)"/>
+            <path d="M1118 34 L1133 104" stroke="rgba(14,15,17,.07)"/>
+
+            <!-- fuselage -->
+            <path id="fuse" d="M190 120 L930 120 C1010 120 1075 112 1140 96 L1150 100 L1146 124 C1100 160 1010 226 860 240 L210 240 C120 240 52 226 48 196 C44 165 100 122 190 120 Z" fill="url(#gBody)" stroke="rgba(14,15,17,.12)"/>
+            <path d="M190 124 L930 124 C1000 124 1060 117 1130 102" stroke="#fff" stroke-width="2" fill="none" opacity=".9"/>
+            <path d="M120 206 C250 214 700 214 960 206" stroke="rgba(14,15,17,.06)" fill="none"/>
+            <!-- radome seam + cockpit -->
+            <path d="M94 141 C80 160 76 190 84 226" stroke="rgba(14,15,17,.10)" fill="none"/>
+            <path d="M90 168 L104 155 L128 151 L128 166 Z" fill="url(#gWin)"/>
+            <path d="M132 151 L158 148 L158 164 L132 166 Z" fill="url(#gWin)"/>
+            <!-- doors -->
+            <rect x="171" y="138" width="22" height="60" rx="6" fill="none" stroke="rgba(14,15,17,.16)"/>
+            <rect x="883" y="138" width="20" height="56" rx="6" fill="none" stroke="rgba(14,15,17,.16)"/>
+            <!-- cabin window row (skips the cut-away) -->
+            <g id="windows" fill="url(#gWin)"></g>
+
+            <!-- engine pylon + nacelle -->
+            <path d="M560 240 L630 243 L690 216 L630 212 Z" fill="#dfe2e6"/>
+            <path d="M505 238 L635 242 C660 244 664 286 635 288 L505 292 C478 292 474 238 505 238 Z" fill="url(#gEng)" stroke="rgba(14,15,17,.12)"/>
+            <path d="M520 246 L630 249" stroke="#fff" stroke-width="2" opacity=".8"/>
+            <ellipse cx="496" cy="265" rx="9" ry="25" fill="url(#gIntake)"/>
+            <path d="M650 252 L676 258 L676 272 L650 278 Z" fill="#9ea4ab"/>
+            <!-- wing (near) + winglet -->
+            <path d="M612 212 C660 209 720 207 768 210 L926 296 L900 304 Z" fill="url(#gWing)" stroke="rgba(14,15,17,.12)"/>
+            <path d="M640 214 L908 298" stroke="#fff" stroke-width="1.5" opacity=".7"/>
+            <path d="M902 302 L924 296 L944 254 L935 254 Z" fill="#d3d7dc" stroke="rgba(14,15,17,.10)"/>
+            <!-- horizontal stabilizer (near) -->
+            <path d="M1040 166 L1118 156 L1172 182 L1158 189 Z" fill="url(#gWing)" stroke="rgba(14,15,17,.12)"/>
+          </g>
+
+          <!-- section highlights (clipped to the airframe) -->
+          <g clip-path="url(#cAir)" id="zoneHl"></g>
+
+          <!-- cut-away window with the live annotated feed -->
+          <g>
+            <rect x="222" y="134" width="276" height="96" rx="25" fill="#fff" stroke="rgba(14,15,17,.14)"/>
+            <foreignObject x="226" y="138" width="268" height="88">
+              <div xmlns="http://www.w3.org/1999/xhtml" class="cut" id="cut" title="Open the live feed">
+                <img id="feedCut" alt="Live annotated drone feed" />
+                <div class="cut-empty"><i class="scanline"></i><b>Connect the drone to begin inspection</b><span>Drone feed · Upload · Screen mirror · Webcam</span></div>
+                <div class="cut-live"><i></i>LIVE</div>
+              </div>
+            </foreignObject>
+          </g>
+
+          <!-- zone hit areas, labels, pins, drone -->
+          <g id="zoneTags"></g>
+          <g id="zoneHits"></g>
+          <g id="drone" style="transform:translate(118px,52px)">
+            <g id="droneBob">
+              <polygon id="droneBeam" points="0,8 -26,90 26,90" fill="url(#gHl)" opacity=".9"/>
+              <path d="M-16 -2 H16" stroke="#0e0f11" stroke-width="2" stroke-linecap="round"/>
+              <ellipse class="rotor" cx="-16" cy="-5" rx="9" ry="1.6" fill="#0e0f11" opacity=".55"/>
+              <ellipse class="rotor" cx="16" cy="-5" rx="9" ry="1.6" fill="#0e0f11" opacity=".55"/>
+              <rect x="-7" y="-4" width="14" height="8" rx="3" fill="#0e0f11"/>
+              <circle cx="0" cy="6" r="2.4" fill="#0e0f11"/><circle cx="0" cy="6" r="1" fill="#7cf0b0"/>
+            </g>
+          </g>
+          <g id="pins"></g>
+        </svg>
+      </div>
+
+      <div class="sec-row">
+        <span class="lbl">Sections</span>
+        <div class="fus">
+          <svg viewBox="0 0 600 44" preserveAspectRatio="none" aria-hidden="true"><path d="M22 1 H520 C552 1 584 10 599 22 C584 34 552 43 520 43 H22 C10 43 1 33 1 22 C1 11 10 1 22 1 Z"/></svg>
+          <div class="seg" id="seg"><span class="seg-ind" id="segInd"></span></div>
+        </div>
+        <button class="circ dark sm" id="nextSec" aria-label="Next section"><span data-i="next"></span><span class="tip">Next section (N)</span></button>
+      </div>
+
+      <div class="bottom">
+        <div class="count-card">
+          <button class="circ sm go" id="toSummary" aria-label="Open summary"><span data-i="upright"></span></button>
+          <div class="lab">Unique defects</div>
+          <div class="big num" id="bigCount">0</div>
+          <div class="row">
+            <div><div class="reg" id="cardReg">Aircraft not set</div><div class="type" id="cardType">Add details in the Aircraft tab</div></div>
+            <div class="health-mini">
+              <div class="adv">Health · advisory</div>
+              <div class="v num" id="cardHealth">100</div>
+              <div class="l" id="cardHealthL">Serviceable</div>
+              <div class="hbar"><i id="cardHbar" style="width:100%"></i></div>
+            </div>
+          </div>
+        </div>
+        <div class="map-card">
+          <div class="map-head">
+            <span class="h">Defect Map</span>
+            <div class="legend" id="legend"></div>
+            <button class="circ sm" id="csvBtn" aria-label="Download CSV"><span data-i="download"></span><span class="tip">Download CSV</span></button>
+            <button class="circ sm" id="resetBtn" aria-label="Reset"><span data-i="reset"></span><span class="tip">Reset inspection</span></button>
+          </div>
+          <div class="map" id="map"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================= DEFECTS -->
+    <section class="view page" id="view-defects">
+      <div class="page-head">
+        <div class="lhs"><h1 class="h-title">Defects</h1><span class="count num" id="defCount">0</span></div>
+        <div class="filters">
+          <div class="filters" id="clsFilters"></div>
+          <div class="sel-wrap"><select class="inp" id="secFilter"><option value="">All sections</option></select><span data-i="chev"></span></div>
+          <div class="sel-wrap"><select class="inp" id="sortSel"><option value="new">Newest first</option><option value="conf">Highest confidence</option><option value="sev">Most severe</option></select><span data-i="chev"></span></div>
+        </div>
+      </div>
+      <div class="grid" id="grid"></div>
+      <div class="empty" id="defEmpty"><div class="in"><span class="ic" data-i="drone"></span><b>No defects yet</b><span>Connect the drone or upload a video in Exterior. Each physical defect is tracked and counted once.</span></div></div>
+    </section>
+
+    <!-- ======================================================= SUMMARY -->
+    <section class="view page" id="view-summary">
+      <div class="page-head">
+        <div class="lhs"><h1 class="h-title">Summary</h1></div>
+        <div class="filters no-print">
+          <a class="btn" href="/api/report.csv" id="sumCsv"><span data-i="download"></span>Download CSV</a>
+          <button class="btn dark" id="printBtn"><span data-i="print"></span>Print report</button>
+        </div>
+      </div>
+      <div class="sum">
+        <div class="card gauge">
+          <svg viewBox="0 0 220 220">
+            <circle class="ring-bg" cx="110" cy="110" r="92"/>
+            <circle class="ring-fg" id="ring" cx="110" cy="110" r="92" transform="rotate(-90 110 110)" stroke-dasharray="578.05" stroke-dashoffset="0"/>
+            <text x="110" y="112" text-anchor="middle" dominant-baseline="central" font-size="62" font-weight="800" letter-spacing="-3" class="num" id="ringTxt" fill="#0e0f11">100</text>
+            <text x="110" y="152" text-anchor="middle" font-size="11" font-weight="700" fill="#86888e" letter-spacing="1.5">HEALTH SCORE</text>
+          </svg>
+          <div>
+            <div class="glabel" id="sumLabel">Serviceable</div>
+            <div class="muted" style="font-size:12px;margin-top:4px;max-width:280px">Advisory only. 100 minus severity weights of unique defects. Findings must be confirmed by a qualified inspector.</div>
+          </div>
+        </div>
+        <div class="sum-r">
+          <div class="card meta-row">
+            <div><span class="eyebrow">Registration</span><b id="sReg">—</b></div>
+            <div><span class="eyebrow">Aircraft type</span><b id="sType">—</b></div>
+            <div><span class="eyebrow">Inspector</span><b id="sInsp">—</b></div>
+            <div><span class="eyebrow">Unique defects</span><b class="num" id="sCount">0</b></div>
+          </div>
+          <div class="card" style="padding:10px 16px 6px;overflow:auto;min-height:0">
+            <table class="mx" id="matrix"></table>
+          </div>
+          <div class="rec"><span class="ic" data-i="info"></span><div id="recTxt">No defects recorded yet.</div></div>
+          <div class="card print-only" id="printList"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================= AIRCRAFT -->
+    <section class="view page" id="view-aircraft">
+      <div class="page-head"><div class="lhs"><h1 class="h-title">Aircraft</h1></div><span class="saved" id="saved">Saved</span></div>
+      <div class="ac">
+        <div class="card">
+          <h3>Inspection details</h3>
+          <p>Shown on the Exterior card, the summary and the CSV report.</p>
+          <div class="field"><label for="fReg">Registration</label><input class="inp" id="fReg" placeholder="e.g. VT-ABC" autocomplete="off" /></div>
+          <div class="field"><label for="fType">Aircraft type</label><input class="inp" id="fType" placeholder="e.g. Narrow-body twinjet" autocomplete="off" /></div>
+          <div class="field"><label for="fInsp">Inspector</label><input class="inp" id="fInsp" placeholder="Full name" autocomplete="off" /></div>
+          <div class="field"><label>Detection confidence</label>
+            <div class="range"><input type="range" id="fConf" min="0.05" max="0.95" step="0.01" /><span class="v num" id="fConfV">0.35</span></div>
+          </div>
+          <div class="field"><label>Model</label><div class="muted" id="modelInfo" style="font-size:12.5px;font-weight:600">Loading…</div><div class="classes" id="classList"></div></div>
+        </div>
+        <div class="card">
+          <h3>Connecting the drone</h3>
+          <p>The toy Wi-Fi drone streams video; AeroScan reads the latest frame and drops stale ones.</p>
+          <ol class="steps">
+            <li><div>Power the drone and join its Wi-Fi network from this PC.</div></li>
+            <li><div>In <b>Exterior</b>, press <b>Drone feed</b> and connect to <code>rtsp://192.168.1.1:7070/webcam</code>.</div></li>
+            <li><div>If RTSP does not open, mirror the phone running the RC UFO app with <code>scrcpy</code>, then use <b>Screen mirror</b> with the window region <code>left,top,width,height</code>.</div></li>
+            <li><div>Select the section the drone is inspecting (keys <code>1</code>–<code>5</code>, <code>N</code> for next). New defects are tagged to it.</div></li>
+            <li><div>No drone? <b>Upload</b> a test image or a short video. Videos play at real-time speed.</div></li>
+          </ol>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- popovers -->
+<div class="pop glass" id="pop"></div>
+<input type="file" id="fileIn" accept="image/*,video/*" hidden />
+
+<!-- snapshot modal -->
+<div class="scrim" id="snapScrim">
+  <div class="modal snap" id="snapModal">
+    <div class="img"><img id="snapImg" alt="Defect snapshot" /></div>
+    <div class="info">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span class="eyebrow" id="snapId">D001</span>
+        <div style="display:flex;gap:6px">
+          <button class="circ sm" id="snapPrev" aria-label="Previous"><span data-i="back"></span></button>
+          <button class="circ sm" id="snapNext" aria-label="Next"><span data-i="next"></span></button>
+          <button class="circ sm" id="snapClose" aria-label="Close"><span data-i="close"></span></button>
+        </div>
+      </div>
+      <span class="cls-tag" id="snapCls"><i></i><span></span></span>
+      <dl class="kv" id="snapKv"></dl>
+      <div class="adv" style="margin-top:auto">Potential defect · confirm visually</div>
+    </div>
+  </div>
+</div>
+
+<!-- fullscreen feed -->
+<div class="scrim" id="feedScrim">
+  <div class="modal feed-modal">
+    <img id="feedBig" alt="Live annotated drone feed (fullscreen)" />
+    <div class="bar"><span class="status" id="status2"><span class="dot" id="statusDot2"></span><span class="t" id="statusTxt2"></span></span>
+      <button class="circ sm" id="feedClose" aria-label="Close"><span data-i="close"></span></button></div>
+  </div>
+</div>
+
+<div class="toasts" id="toasts"></div>
+
+<script>
+(() => {
+  // ------------------------------------------------------------------ icons (inline, thin stroke)
+  const ICONS = {
+    logo: '<circle cx="12" cy="12" r="5.2"/><path d="M2.8 12h4M17.2 12h4M12 2.8v4M12 17.2v4"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/>',
+    back: '<path d="M19 12H5M11 6l-6 6 6 6"/>',
+    next: '<path d="M5 12h14M13 6l6 6-6 6"/>',
+    drone: '<circle cx="5.5" cy="5.5" r="2.6"/><circle cx="18.5" cy="5.5" r="2.6"/><circle cx="5.5" cy="18.5" r="2.6"/><circle cx="18.5" cy="18.5" r="2.6"/><path d="M7.6 7.6l2 2M16.4 7.6l-2 2M7.6 16.4l2-2M16.4 16.4l-2-2"/><rect x="9.4" y="9.4" width="5.2" height="5.2" rx="1.6"/>',
+    upload: '<path d="M12 15V4M7.5 8.5L12 4l4.5 4.5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/>',
+    mirror: '<rect x="7.5" y="3" width="9" height="18" rx="2.4"/><path d="M11 18h2"/><path d="M3.5 9.5a4.5 4.5 0 0 1 0 5M20.5 9.5a4.5 4.5 0 0 1 0 5"/>',
+    webcam: '<circle cx="12" cy="10" r="6.2"/><circle cx="12" cy="10" r="2.3"/><path d="M8 21h8M12 16.2V21"/>',
+    stop: '<rect x="6.5" y="6.5" width="11" height="11" rx="2.6"/>',
+    settings: '<path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2.2"/><circle cx="9" cy="17" r="2.2"/>',
+    expand: '<path d="M14 4h6v6M10 20H4v-6M20 4l-6.5 6.5M4 20l6.5-6.5"/>',
+    camera: '<path d="M4 8.6A2.6 2.6 0 0 1 6.6 6h1.6l1.5-2h4.6l1.5 2h1.6A2.6 2.6 0 0 1 20 8.6v7.8a2.6 2.6 0 0 1-2.6 2.6H6.6A2.6 2.6 0 0 1 4 16.4z"/><circle cx="12" cy="12.4" r="3.4"/>',
+    upright: '<path d="M7 17L17 7M8.5 7H17v8.5"/>',
+    download: '<path d="M12 4v11M7.5 10.5L12 15l4.5-4.5"/><path d="M4 17v1a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-1"/>',
+    reset: '<path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3"/><path d="M4.5 4.5v4h4"/>',
+    print: '<path d="M7 9V4h10v5"/><rect x="4" y="9" width="16" height="8" rx="2.2"/><path d="M7.5 14h9v6h-9z"/>',
+    close: '<path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/>',
+    chev: '<path d="M6 9l6 6 6-6"/>',
+    info: '<path d="M12 11v6M12 7.5v.01"/><circle cx="12" cy="12" r="9"/>',
+  };
+  const icon = (n) => `<svg class="i" viewBox="0 0 24 24" aria-hidden="true">${ICONS[n] || ''}</svg>`;
+  document.querySelectorAll('[data-i]').forEach((el) => { el.outerHTML = icon(el.dataset.i); });
+
+  // ------------------------------------------------------------------ constants
+  const $ = (id) => document.getElementById(id);
+  const SECTIONS = ['Nose', 'Forward Fuselage', 'Wings & Engines', 'Aft Fuselage', 'Tail'];
+  const SHORT = { 'Nose': 'Nose', 'Forward Fuselage': 'Fwd fuselage', 'Wings & Engines': 'Wings & engines', 'Aft Fuselage': 'Aft fuselage', 'Tail': 'Tail' };
+  const COLORS = { crack: '#e5484d', corrosion: '#f76b15', dent: '#f5a524', fastener: '#7c5cff', paint: '#14b8a6', scratch: '#3b82f6', other: '#8b8d98' };
+  const DEFAULT_LEGEND = [['crack', 'Crack'], ['corrosion', 'Corrosion'], ['dent', 'Dent'], ['fastener', 'Missing fastener'], ['paint', 'Paint'], ['scratch', 'Scratch']];
+  // zone geometry in SVG user units (viewBox 0 -24 1200 384)
+  const ZONES = {
+    'Nose':             { x0: 30,  x1: 200,  tag: [112, 92],  pin: [108, 146, 108, 88],   drone: [112, 44],  beam: [112, 140] },
+    'Forward Fuselage': { x0: 200, x1: 505,  tag: [352, 108], pin: [470, 121, 470, 74],   drone: [352, 48],  beam: [352, 124] },
+    'Wings & Engines':  { x0: 505, x1: 905,  tag: [705, 108], pin: [905, 286, 960, 248],  drone: [705, 44],  beam: [705, 210] },
+    'Aft Fuselage':     { x0: 905, x1: 1000, tag: [952, 108], pin: [952, 122, 952, 74],   drone: [952, 40],  beam: [952, 124] },
+    'Tail':             { x0: 1000, x1: 1185, tag: [1158, -6], pin: [1132, 44, 1182, 14], drone: [1012, 28], beam: [1080, 70] },
+  };
+
+  // ------------------------------------------------------------------ state
+  let S = null, lastVersion = -1, known = null, selSnap = null, activeTab = 'exterior';
+  let clsFilter = '', online = true;
+  const colorOf = (key) => COLORS[key] || COLORS.other;
+  const fmtTime = (iso) => { try { return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }); } catch { return iso; } };
+  const pct = (v) => `${Math.round(v * 100)}`;
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const api = async (path, body) => {
+    const r = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined });
+    if (!r.ok) { let m = r.statusText; try { m = (await r.json()).detail || m; } catch {} throw new Error(m); }
+    return r.json();
+  };
+
+  // ------------------------------------------------------------------ animated counters
+  const counters = new WeakMap();
+  function countTo(el, to) {
+    const from = counters.get(el) ?? (parseFloat(el.textContent) || 0);
+    counters.set(el, to);
+    if (from === to) { el.textContent = to; return; }
+    const t0 = performance.now(), d = 700;
+    const step = (t) => {
+      const k = Math.min(1, (t - t0) / d), e = 1 - Math.pow(1 - k, 3);
+      el.textContent = Math.round(from + (to - from) * e);
+      if (k < 1 && counters.get(el) === to) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }
+
+  // ------------------------------------------------------------------ tabs
+  function moveInd(container, ind, btn) {
+    const c = container.getBoundingClientRect(), b = btn.getBoundingClientRect();
+    ind.style.width = `${b.width}px`;
+    ind.style.transform = `translateX(${b.left - c.left - (container === $('tabs') ? 0 : 0)}px)`;
+  }
+  function setTab(t) {
+    activeTab = t;
+    document.querySelectorAll('.tab').forEach((b) => b.classList.toggle('active', b.dataset.tab === t));
+    document.querySelectorAll('.view').forEach((v) => v.classList.toggle('active', v.id === `view-${t}`));
+    moveInd($('tabs'), $('tabInd'), document.querySelector(`.tab[data-tab="${t}"]`));
+    closePop();
+    if (S) renderAll(S, true);
+  }
+  document.querySelectorAll('.tab').forEach((b) => b.addEventListener('click', () => setTab(b.dataset.tab)));
+  $('backBtn').onclick = () => setTab('aircraft');
+  $('toSummary').onclick = () => setTab('summary');
+
+  // ------------------------------------------------------------------ build static SVG parts
+  (function buildAircraft() {
+    const NS = 'http://www.w3.org/2000/svg';
+    const win = $('windows');
+    for (let x = 206; x <= 870; x += 19) {
+      if (x > 212 && x < 508) continue; // cut-away
+      if (x > 876) continue;
+      const r = document.createElementNS(NS, 'rect');
+      Object.entries({ x, y: 152, width: 8.5, height: 15, rx: 4.2 }).forEach(([k, v]) => r.setAttribute(k, v));
+      win.appendChild(r);
+    }
+    const hl = $('zoneHl'), hits = $('zoneHits'), tags = $('zoneTags'), pins = $('pins');
+    SECTIONS.forEach((s, i) => {
+      const z = ZONES[s];
+      const r = document.createElementNS(NS, 'rect');
+      Object.entries({ x: z.x0, y: -24, width: z.x1 - z.x0, height: 384, fill: 'url(#gHl)', class: 'zone-hl' }).forEach(([k, v]) => r.setAttribute(k, v));
+      r.dataset.s = s; hl.appendChild(r);
+      const h = document.createElementNS(NS, 'rect');
+      Object.entries({ x: z.x0, y: -24, width: z.x1 - z.x0, height: 360, class: 'zone-hit' }).forEach(([k, v]) => h.setAttribute(k, v));
+      h.dataset.s = s;
+      h.innerHTML = `<title>${s} (${i + 1})</title>`;
+      h.addEventListener('mouseenter', () => r.classList.add('hover'));
+      h.addEventListener('mouseleave', () => r.classList.remove('hover'));
+      h.addEventListener('click', () => selectSection(s));
+      hits.appendChild(h);
+      const tg = document.createElementNS(NS, 'text');
+      Object.entries({ x: z.tag[0], y: z.tag[1], 'text-anchor': 'middle', class: 'zone-tag' }).forEach(([k, v]) => tg.setAttribute(k, v));
+      tg.dataset.s = s; tg.textContent = s.toUpperCase(); tg.setAttribute('letter-spacing', '1.6'); tg.setAttribute('font-size', '10.5');
+      tags.appendChild(tg);
+      const [ax, ay, bx, by] = z.pin;
+      const g = document.createElementNS(NS, 'g');
+      g.setAttribute('class', 'pin hide'); g.dataset.s = s;
+      g.innerHTML = `<line x1="${ax}" y1="${ay}" x2="${bx}" y2="${by}" stroke="#0e0f11" stroke-opacity=".35" stroke-width="1.2"/>
+        <circle cx="${ax}" cy="${ay}" r="3.2" fill="#0e0f11"/>
+        <g class="bub"><circle cx="${bx}" cy="${by}" r="15.5" fill="#888" stroke="#fff" stroke-width="3"/><text x="${bx}" y="${by + .5}">0</text></g>`;
+      g.addEventListener('click', () => { selectSection(s); setTab('defects'); $('secFilter').value = s; renderDefects(true); });
+      pins.appendChild(g);
+    });
+    // section segmented control
+    const seg = $('seg');
+    SECTIONS.forEach((s, i) => {
+      const b = document.createElement('button');
+      b.dataset.s = s; b.innerHTML = `<span>${SHORT[s]}</span><span class="c num"></span>`;
+      b.title = `${s} (${i + 1})`;
+      b.onclick = () => selectSection(s);
+      seg.appendChild(b);
+    });
+    // map columns
+    const map = $('map');
+    map.innerHTML = '<div class="cap l"></div>' + SECTIONS.map((s) => `<div class="col" data-s="${s}"><div class="col-h"><span>${SHORT[s]}</span><b class="num">0</b></div><div class="chips"></div></div>`).join('') + '<div class="cap"></div>';
+    $('secFilter').innerHTML += SECTIONS.map((s) => `<option>${s}</option>`).join('');
+  })();
+  $('cut').addEventListener('click', () => openFeed());
+
+  // ------------------------------------------------------------------ section selection
+  let pendingSection = null;
+  async function selectSection(s) {
+    pendingSection = s;
+    renderSection(s);
+    try { await api('/api/section', { section: s }); } catch (e) { toast('Could not set section', e.message); }
+    pendingSection = null;
+  }
+  $('nextSec').onclick = () => {
+    const cur = pendingSection || S?.section || SECTIONS[0];
+    selectSection(SECTIONS[(SECTIONS.indexOf(cur) + 1) % SECTIONS.length]);
+  };
+  document.addEventListener('keydown', (e) => {
+    if (e.target.closest('input,select,textarea')) return;
+    if (e.key === 'Escape') { closePop(); closeModal('snapScrim'); closeModal('feedScrim'); }
+    if ($('snapScrim').classList.contains('open')) {
+      if (e.key === 'ArrowRight') stepSnap(1);
+      if (e.key === 'ArrowLeft') stepSnap(-1);
+      return;
+    }
+    if (/^[1-5]$/.test(e.key)) selectSection(SECTIONS[+e.key - 1]);
+    if (e.key === 'n' || e.key === 'N') $('nextSec').click();
+  });
+
+  function renderSection(s) {
+    document.querySelectorAll('.zone-hl').forEach((r) => r.classList.toggle('sel', r.dataset.s === s));
+    document.querySelectorAll('.zone-tag').forEach((r) => r.classList.toggle('sel', r.dataset.s === s));
+    document.querySelectorAll('#seg button').forEach((b) => b.classList.toggle('active', b.dataset.s === s));
+    document.querySelectorAll('.col').forEach((c) => c.classList.toggle('sel', c.dataset.s === s));
+    const btn = document.querySelector(`#seg button[data-s="${CSS.escape(s)}"]`);
+    if (btn) moveInd($('seg'), $('segInd'), btn);
+    const z = ZONES[s];
+    if (z) {
+      $('drone').style.transform = `translate(${z.drone[0]}px,${z.drone[1]}px)`;
+      const tx = z.beam[0] - z.drone[0], ty = z.beam[1] - z.drone[1];
+      const len = Math.hypot(tx, ty) || 1, nx = -ty / len, ny = tx / len, w = 24;
+      $('droneBeam').setAttribute('points', `0,7 ${tx + nx * w},${ty + ny * w} ${tx - nx * w},${ty - ny * w}`);
+    }
+    $('hintSec').textContent = s;
+  }
+
+  // ------------------------------------------------------------------ popovers
+  const pop = $('pop');
+  let popFor = null;
+  const stored = (k, d) => localStorage.getItem(`aeroscan.${k}`) ?? d;
+  const store = (k, v) => localStorage.setItem(`aeroscan.${k}`, v);
+  const POPS = {
+    rtsp: () => `<h4>Drone feed</h4><p>Join the drone's Wi-Fi first. Uses the threaded latest-frame reader.</p>
+      <div class="field"><label for="pRtsp">RTSP address</label><input class="inp" id="pRtsp" value="${esc(stored('rtsp', 'rtsp://192.168.1.1:7070/webcam'))}" /></div>
+      <div class="actions"><button class="btn" data-close>Cancel</button><button class="btn dark" data-go="rtsp">Connect</button></div>`,
+    screen: () => `<h4>Screen mirror</h4><p>Mirror the phone with <code>scrcpy</code>, then capture its window region on this screen.</p>
+      <div class="field"><label for="pScreen">Region: left, top, width, height</label><input class="inp num" id="pScreen" value="${esc(stored('screen', '0,0,1280,720'))}" /></div>
+      <div class="actions"><button class="btn" data-close>Cancel</button><button class="btn dark" data-go="screen">Capture</button></div>`,
+    webcam: () => `<h4>Webcam</h4><p>Any local camera or capture card.</p>
+      <div class="field"><label for="pCam">Device index</label><input class="inp num" id="pCam" value="${esc(stored('webcam', '0'))}" inputmode="numeric" /></div>
+      <div class="actions"><button class="btn" data-close>Cancel</button><button class="btn dark" data-go="webcam">Connect</button></div>`,
+    settings: () => `<h4>Detection settings</h4><p>Applies to the next frames immediately.</p>
+      <div class="field"><label>Confidence threshold</label><div class="range"><input type="range" id="pConf" min="0.05" max="0.95" step="0.01" value="${S?.settings.confidence ?? 0.35}" /><span class="v num" id="pConfV"></span></div></div>
+      <div class="actions"><button class="btn" data-tab-go="aircraft">Aircraft details</button><button class="btn dark" data-close>Done</button></div>`,
+  };
+  function openPop(kind, anchor) {
+    if (popFor === kind) return closePop();
+    popFor = kind;
+    pop.innerHTML = POPS[kind]();
+    const r = anchor.getBoundingClientRect();
+    pop.style.left = `${Math.min(window.innerWidth - 336, Math.max(16, r.left + r.width / 2 - 160))}px`;
+    pop.style.top = `${r.bottom + 12}px`;
+    requestAnimationFrame(() => pop.classList.add('open'));
+    document.querySelectorAll('[data-pop]').forEach((b) => b.classList.toggle('on', b === anchor));
+    const inp = pop.querySelector('.inp'); if (inp) setTimeout(() => inp.focus(), 60);
+    const pc = $('pConf');
+    if (pc) { wireRange(pc, $('pConfV')); pc.addEventListener('change', () => saveSettings({ confidence: +pc.value })); }
+  }
+  function closePop() { popFor = null; pop.classList.remove('open'); document.querySelectorAll('[data-pop]').forEach((b) => b.classList.remove('on')); }
+  document.querySelectorAll('[data-pop]').forEach((b) => b.addEventListener('click', (e) => { e.stopPropagation(); openPop(b.dataset.pop, b); }));
+  document.addEventListener('click', (e) => { if (popFor && !pop.contains(e.target)) closePop(); });
+  pop.addEventListener('keydown', (e) => { if (e.key === 'Enter') pop.querySelector('[data-go]')?.click(); });
+  pop.addEventListener('click', async (e) => {
+    const t = e.target.closest('button'); if (!t) return;
+    if (t.hasAttribute('data-close')) return closePop();
+    if (t.dataset.tabGo) return setTab(t.dataset.tabGo);
+    const kind = t.dataset.go; if (!kind) return;
+    const val = { rtsp: () => $('pRtsp').value, screen: () => $('pScreen').value, webcam: () => $('pCam').value }[kind]();
+    store(kind, val);
+    closePop();
+    try { await api('/api/connect', { kind, value: val }); poll(); }
+    catch (err) { toast('Could not connect', err.message, 'crack'); }
+  });
+
+  // upload / stop / still / reset / csv
+  $('uploadBtn').onclick = () => $('fileIn').click();
+  $('fileIn').onchange = async () => {
+    const f = $('fileIn').files[0]; if (!f) return;
+    const fd = new FormData(); fd.append('file', f);
+    toast('Uploading', f.name);
+    try {
+      const r = await fetch('/api/upload', { method: 'POST', body: fd });
+      if (!r.ok) throw new Error((await r.json()).detail || r.statusText);
+      poll();
+    } catch (err) { toast('Upload failed', err.message, 'crack'); }
+    $('fileIn').value = '';
+  };
+  $('stopBtn').onclick = async () => { try { await api('/api/stop'); poll(); } catch (e) { toast('Stop failed', e.message, 'crack'); } };
+  $('resetBtn').onclick = async () => {
+    if (S?.defects.length && !confirm(`Clear all ${S.defects.length} recorded defect(s)? Download the CSV first if you need it.`)) return;
+    try { await api('/api/reset'); known = new Set(); poll(); toast('Inspection reset', 'Defect list and tracker cleared'); } catch (e) { toast('Reset failed', e.message, 'crack'); }
+  };
+  $('csvBtn').onclick = () => { location.href = '/api/report.csv'; };
+  $('printBtn').onclick = () => window.print();
+  $('stillBtn').onclick = async () => {
+    try {
+      const r = await fetch(`/api/frame.jpg?t=${Date.now()}`);
+      if (!r.ok) throw new Error('No frame yet. Connect a source first.');
+      const url = URL.createObjectURL(await r.blob());
+      const a = Object.assign(document.createElement('a'), { href: url, download: `aeroscan_still_${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.jpg` });
+      a.click(); setTimeout(() => URL.revokeObjectURL(url), 2000);
+      toast('Still captured', 'Saved the current annotated frame');
+    } catch (e) { toast('Capture failed', e.message, 'crack'); }
+  };
+
+  // ------------------------------------------------------------------ feed (MJPEG)
+  function attachStream(img) {
+    img.onerror = () => setTimeout(() => { img.src = `/api/stream?r=${Date.now()}`; }, 2000);
+    img.src = `/api/stream?r=${Date.now()}`;
+  }
+  // attach after 'load' so the never-ending MJPEG response does not keep the page in a loading state
+  if (document.readyState === 'complete') attachStream($('feedCut')); else window.addEventListener('load', () => attachStream($('feedCut')));
+  function openFeed() {
+    if (!S?.has_frame) { toast('No feed yet', 'Connect the drone, a webcam, a screen region or upload a file'); return; }
+    const big = $('feedBig');
+    if (!big.src) attachStream(big);
+    $('feedScrim').classList.add('open');
+  }
+  function closeModal(id) {
+    $(id).classList.remove('open');
+    if (id === 'feedScrim') { const b = $('feedBig'); b.onerror = null; b.removeAttribute('src'); }
+  }
+  $('expandBtn').onclick = openFeed;
+  $('feedClose').onclick = () => closeModal('feedScrim');
+  $('feedScrim').addEventListener('click', (e) => { if (e.target.id === 'feedScrim') closeModal('feedScrim'); });
+
+  // ------------------------------------------------------------------ snapshot modal
+  function openSnap(id) {
+    const d = S?.defects.find((x) => x.id === id); if (!d) return;
+    selSnap = id;
+    $('snapImg').src = `/api/snapshot/${encodeURIComponent(id)}?c=${d.confidence}`;
+    $('snapId').textContent = `${d.id}${d.track_id != null ? ` · track ${d.track_id}` : ''}`;
+    const tag = $('snapCls'); tag.querySelector('i').style.background = colorOf(d.key); tag.querySelector('span').textContent = d.class;
+    const rows = [
+      ['Confidence', `${pct(d.confidence)}%`], ['Section', d.section], ['Size', `${d.size_pct.toFixed(2)}% of frame`],
+      ['Detected', fmtTime(d.timestamp)], ['Source', d.source || '—'], ['Severity weight', d.weight],
+    ];
+    if (d.video_time_s != null) rows.push(['Video time', `${d.video_time_s.toFixed(1)} s`]);
+    $('snapKv').innerHTML = rows.map(([k, v]) => `<dt>${k}</dt><dd class="num">${esc(v)}</dd>`).join('');
+    $('snapScrim').classList.add('open');
+  }
+  function stepSnap(k) {
+    if (!S || !selSnap) return;
+    const i = S.defects.findIndex((d) => d.id === selSnap);
+    const n = S.defects[(i + k + S.defects.length) % S.defects.length];
+    if (n) openSnap(n.id);
+  }
+  $('snapClose').onclick = () => closeModal('snapScrim');
+  $('snapPrev').onclick = () => stepSnap(-1);
+  $('snapNext').onclick = () => stepSnap(1);
+  $('snapScrim').addEventListener('click', (e) => { if (e.target.id === 'snapScrim') closeModal('snapScrim'); });
+
+  // ------------------------------------------------------------------ toasts
+  function toast(title, sub, key) {
+    const t = document.createElement('div');
+    t.className = 'toast glass';
+    t.innerHTML = `<i class="sw" style="background:${key ? colorOf(key) : '#0e0f11'}"></i><div><div>${esc(title)}</div>${sub ? `<div class="s">${esc(sub)}</div>` : ''}</div>`;
+    $('toasts').prepend(t);
+    while ($('toasts').children.length > 4) $('toasts').lastChild.remove();
+    setTimeout(() => { t.classList.add('out'); setTimeout(() => t.remove(), 400); }, 3600);
+  }
+
+  // ------------------------------------------------------------------ settings form
+  function wireRange(inp, out) {
+    const upd = () => { inp.style.setProperty('--p', `${((inp.value - inp.min) / (inp.max - inp.min)) * 100}%`); out.textContent = (+inp.value).toFixed(2); };
+    inp.addEventListener('input', upd); upd();
+  }
+  let saveT = null;
+  async function saveSettings(patch) {
+    try { await api('/api/settings', patch); $('saved').classList.add('on'); clearTimeout(saveT); saveT = setTimeout(() => $('saved').classList.remove('on'), 1400); poll(); }
+    catch (e) { toast('Could not save', e.message, 'crack'); }
+  }
+  [['fReg', 'registration'], ['fType', 'aircraft_type'], ['fInsp', 'inspector']].forEach(([id, key]) => {
+    let t = null;
+    $(id).addEventListener('input', () => { clearTimeout(t); t = setTimeout(() => saveSettings({ [key]: $(id).value }), 500); });
+  });
+  wireRange($('fConf'), $('fConfV'));
+  $('fConf').addEventListener('change', () => saveSettings({ confidence: +$('fConf').value }));
+
+  // ------------------------------------------------------------------ rendering
+  const STATUS_TEXT = { idle: 'Not connected', connecting: 'Connecting', live: 'Live', finished: 'Finished', error: 'Error' };
+  function statusLine(s) {
+    if (!online) return ['error', 'Server offline', 'start python server.py'];
+    if (s.model.status === 'loading') return ['connecting', 'Loading model', s.model.weights];
+    if (s.model.status === 'error' && s.status === 'idle') return ['error', 'Model error', s.model.error];
+    const src = s.source?.label ? s.source.label : '';
+    if (s.status === 'live') return ['live', 'Live', `${src} · ${s.fps.toFixed(1)} fps`];
+    if (s.status === 'connecting') return ['connecting', 'Connecting', src];
+    if (s.status === 'finished') return ['finished', 'Finished', [src, s.message].filter(Boolean).join(' · ')];
+    if (s.status === 'error') return ['error', 'Error', s.message];
+    return ['', s.message === 'Stopped' ? 'Stopped' : 'Not connected', s.message === 'Stopped' ? '' : 'connect a source to begin'];
+  }
+  function renderStatus(s) {
+    const [cls, t, sub] = statusLine(s);
+    for (const [dot, txt] of [['statusDot', 'statusTxt'], ['statusDot2', 'statusTxt2']]) {
+      $(dot).className = `dot ${cls}`;
+      $(txt).innerHTML = `${esc(t)}${sub ? ` <span class="sub">· ${esc(sub)}</span>` : ''}`;
+    }
+    $('status').title = `${t}${sub ? ' · ' + sub : ''}`;
+    const cut = $('cut');
+    cut.classList.toggle('has', !!s.has_frame && online);
+    cut.classList.toggle('live', s.status === 'live');
+    const m = s.model;
+    $('modelDot').className = `dot ${m.status === 'ready' ? 'live' : m.status === 'loading' ? 'connecting' : 'error'}`;
+    $('modelTxt').innerHTML = m.status === 'ready' ? `${esc(m.device.toUpperCase())}${m.half ? ' · FP16' : ''} <span class="sub">${esc(m.weights)}</span>` : m.status === 'loading' ? 'Loading model' : 'Model unavailable';
+    $('modelPill').title = m.error || `${m.weights} on ${m.device}`;
+    document.querySelectorAll('#ctrls .circ').forEach((b) => b.classList.toggle('on', false));
+    $('stopBtn').disabled = !(s.status === 'live' || s.status === 'connecting');
+  }
+
+  function sevKey(list) {
+    let best = null;
+    for (const d of list) if (!best || d.weight > best.weight) best = d;
+    return best?.key ?? 'other';
+  }
+  function legendItems(s) {
+    if (s.classes?.length) return s.classes.map((c) => [c.key, c.name]);
+    return DEFAULT_LEGEND;
+  }
+
+  function renderExterior(s, newIds) {
+    renderSection(pendingSection || s.section);
+    const bySec = Object.fromEntries(SECTIONS.map((x) => [x, []]));
+    s.defects.forEach((d) => (bySec[d.section] ||= []).push(d));
+    // pins
+    document.querySelectorAll('.pin').forEach((g) => {
+      const list = bySec[g.dataset.s] || [];
+      g.classList.toggle('hide', list.length === 0);
+      g.querySelector('.bub circle').setAttribute('fill', colorOf(sevKey(list)));
+      const txt = g.querySelector('text');
+      if (txt.textContent !== String(list.length)) {
+        txt.textContent = list.length;
+        if (list.some((d) => newIds.has(d.id))) { g.classList.remove('bump'); void g.getBBox(); g.classList.add('bump'); }
+      }
+    });
+    document.querySelectorAll('#seg button').forEach((b) => { const n = (bySec[b.dataset.s] || []).length; b.querySelector('.c').textContent = n || ''; });
+    // count card
+    countTo($('bigCount'), s.defects.length);
+    const st = s.settings;
+    $('cardReg').textContent = st.registration || 'Aircraft not set';
+    $('cardType').textContent = st.aircraft_type || (st.registration ? '—' : 'Add details in the Aircraft tab');
+    countTo($('cardHealth'), s.health.score);
+    $('cardHealthL').textContent = s.health.label;
+    $('cardHbar').style.width = `${s.health.score}%`;
+    // legend
+    $('legend').innerHTML = legendItems(s).map(([k, n]) => `<span><i style="background:${colorOf(k)}"></i>${esc(n)}</span>`).join('');
+    // map
+    document.querySelectorAll('.col').forEach((col) => {
+      const list = bySec[col.dataset.s] || [];
+      col.querySelector('.col-h b').textContent = list.length;
+      const chips = col.querySelector('.chips');
+      const sig = list.map((d) => d.id + d.key).join();
+      if (chips.dataset.sig === sig) return;
+      chips.dataset.sig = sig;
+      chips.innerHTML = list.length ? list.map((d) =>
+        `<button class="chip${newIds.has(d.id) ? ' new' : ''}" data-id="${d.id}" style="background:${colorOf(d.key)}" title="${esc(d.class)} · ${pct(d.confidence)}% · ${fmtTime(d.timestamp)}">${d.id}</button>`).join('')
+        : '<span class="col-empty">No findings</span>';
+    });
+  }
+  $('map').addEventListener('click', (e) => { const c = e.target.closest('.chip'); if (c) openSnap(c.dataset.id); });
+
+  let defSig = '';
+  function renderDefects(force) {
+    if (!S) return;
+    const s = S, sec = $('secFilter').value, sort = $('sortSel').value;
+    // class filter pills
+    const counts = {};
+    s.defects.forEach((d) => { counts[d.class] = (counts[d.class] || 0) + 1; });
+    const names = [...new Set([...(s.classes || []).map((c) => c.name), ...Object.keys(counts)])];
+    const keyOf = (n) => (s.classes || []).find((c) => c.name === n)?.key || s.defects.find((d) => d.class === n)?.key || 'other';
+    $('clsFilters').innerHTML = `<button class="fpill${clsFilter ? '' : ' on'}" data-c="">All <span class="n num">${s.defects.length}</span></button>` +
+      names.map((n) => `<button class="fpill${clsFilter === n ? ' on' : ''}" data-c="${esc(n)}"><i style="background:${colorOf(keyOf(n))}"></i>${esc(n)} <span class="n num">${counts[n] || 0}</span></button>`).join('');
+    let list = s.defects.filter((d) => (!clsFilter || d.class === clsFilter) && (!sec || d.section === sec));
+    if (sort === 'new') list = list.slice().reverse();
+    if (sort === 'conf') list = list.slice().sort((a, b) => b.confidence - a.confidence);
+    if (sort === 'sev') list = list.slice().sort((a, b) => b.weight - a.weight || b.confidence - a.confidence);
+    countTo($('defCount'), list.length);
+    const sig = `${clsFilter}|${sec}|${sort}|` + list.map((d) => d.id + d.confidence).join();
+    if (!force && sig === defSig) return;
+    defSig = sig;
+    $('defEmpty').style.display = list.length ? 'none' : '';
+    $('grid').style.display = list.length ? '' : 'none';
+    if (!s.defects.length) $('defEmpty').querySelector('b').textContent = 'No defects yet';
+    else if (!list.length) $('defEmpty').querySelector('b').textContent = 'Nothing matches these filters';
+    $('grid').innerHTML = list.map((d) => `
+      <button class="dcard" data-id="${d.id}">
+        <div class="ph" style="background-image:url('/api/snapshot/${encodeURIComponent(d.id)}?c=${d.confidence}')">
+          <span class="tag" style="background:${colorOf(d.key)}">${esc(d.class)}</span><span class="id">${d.id}</span>
+        </div>
+        <div class="bd"><span class="sec">${esc(d.section)}</span><span class="cf num">${pct(d.confidence)}<small>%</small></span><span class="tm num">${fmtTime(d.timestamp)}</span></div>
+      </button>`).join('');
+  }
+  $('clsFilters').addEventListener('click', (e) => { const b = e.target.closest('.fpill'); if (!b) return; clsFilter = b.dataset.c; renderDefects(true); });
+  $('secFilter').onchange = () => renderDefects(true);
+  $('sortSel').onchange = () => renderDefects(true);
+  $('grid').addEventListener('click', (e) => { const c = e.target.closest('.dcard'); if (c) openSnap(c.dataset.id); });
+
+  function recommendation(s) {
+    const n = s.defects.length, h = s.health;
+    if (!n) return 'No defects recorded in the inspected sections. Confirm that all five sections were covered before signing off.';
+    const worst = s.defects.reduce((a, b) => (b.weight > a.weight ? b : a));
+    const secCounts = {}; s.defects.forEach((d) => { secCounts[d.section] = (secCounts[d.section] || 0) + 1; });
+    const topSec = Object.entries(secCounts).sort((a, b) => b[1] - a[1])[0][0];
+    const lead = `${n} unique defect${n > 1 ? 's' : ''}; most severe: ${worst.class} (${worst.id}, ${worst.section}). Highest concentration: ${topSec}.`;
+    if (h.label === 'Serviceable') return `${lead} Advisory: serviceable, log findings and re-check at the next scheduled inspection.`;
+    if (h.label === 'Inspection required') return `${lead} Advisory: detailed visual inspection of the flagged areas required before release.`;
+    return `${lead} Advisory: refer to engineering for damage assessment before further flight.`;
+  }
+
+  function renderSummary(s) {
+    const st = s.settings;
+    $('sReg').textContent = st.registration || '—';
+    $('sType').textContent = st.aircraft_type || '—';
+    $('sInsp').textContent = st.inspector || '—';
+    countTo($('sCount'), s.defects.length);
+    countTo($('ringTxt'), s.health.score);
+    $('ring').style.strokeDashoffset = `${578.05 * (1 - s.health.score / 100)}`;
+    $('sumLabel').textContent = s.health.label;
+    const used = new Map();
+    (s.classes || []).forEach((c) => used.set(c.name, c.key));
+    s.defects.forEach((d) => used.set(d.class, d.key));
+    const cls = [...used.keys()];
+    const tot = {};
+    const rows = SECTIONS.map((sec) => {
+      const m = s.by_section[sec] || {};
+      const n = Object.values(m).reduce((a, b) => a + b, 0);
+      cls.forEach((c) => { tot[c] = (tot[c] || 0) + (m[c] || 0); });
+      return `<tr><td>${sec}</td>${cls.map((c) => `<td class="num${m[c] ? '' : ' z'}">${m[c] || '·'}</td>`).join('')}<td class="num">${n}</td></tr>`;
+    }).join('');
+    $('matrix').innerHTML = `<thead><tr><th>Section</th>${cls.map((c) => `<th><i style="background:${colorOf(used.get(c))}"></i>${esc(c)}</th>`).join('')}<th>Total</th></tr></thead>
+      <tbody>${rows}</tbody><tfoot><tr><td>Total</td>${cls.map((c) => `<td class="num">${tot[c] || 0}</td>`).join('')}<td class="num">${s.defects.length}</td></tr></tfoot>`;
+    $('recTxt').textContent = recommendation(s);
+    $('printList').innerHTML = `<div class="eyebrow" style="margin-bottom:8px">Findings · ${new Date().toLocaleString()}</div>
+      <table class="mx"><thead><tr><th>ID</th><th>Class</th><th>Section</th><th>Confidence</th><th>Size %</th><th>Time</th></tr></thead><tbody>
+      ${s.defects.map((d) => `<tr><td>${d.id}</td><td style="text-align:left">${esc(d.class)}</td><td style="text-align:left">${esc(d.section)}</td><td>${pct(d.confidence)}%</td><td>${d.size_pct.toFixed(2)}</td><td>${fmtTime(d.timestamp)}</td></tr>`).join('')}
+      </tbody></table>`;
+  }
+
+  function renderAircraft(s) {
+    const st = s.settings;
+    [['fReg', 'registration'], ['fType', 'aircraft_type'], ['fInsp', 'inspector']].forEach(([id, k]) => { if (document.activeElement !== $(id)) $(id).value = st[k] || ''; });
+    if (document.activeElement !== $('fConf')) { $('fConf').value = st.confidence; $('fConf').dispatchEvent(new Event('input')); }
+    const m = s.model;
+    $('modelInfo').textContent = m.status === 'ready' ? `${m.weights} · ${m.device.toUpperCase()}${m.half ? ' · half precision' : ''}` : m.status === 'loading' ? 'Loading…' : (m.error || 'Unavailable');
+    $('classList').innerHTML = (s.classes || []).map((c) => `<span><i style="background:${colorOf(c.key)}"></i>${esc(c.name)}</span>`).join('');
+    const ini = (st.inspector || '').split(/\s+/).filter(Boolean).map((w) => w[0]).slice(0, 2).join('').toUpperCase();
+    $('avatar').textContent = ini || '—';
+  }
+
+  function renderAll(s, force) {
+    const ids = new Set(s.defects.map((d) => d.id));
+    const newIds = new Set();
+    if (known) for (const id of ids) if (!known.has(id)) newIds.add(id);
+    if (known && newIds.size && newIds.size <= 5) {
+      for (const id of newIds) {
+        const d = s.defects.find((x) => x.id === id);
+        toast(`New defect ${d.id} · ${d.class}`, `${d.section} · ${pct(d.confidence)}% confidence`, d.key);
+      }
+    } else if (known && newIds.size > 5) toast(`${newIds.size} new defects`, 'See the Defect Map');
+    known = ids;
+    renderStatus(s);
+    renderExterior(s, newIds);
+    renderAircraft(s);
+    if (activeTab === 'defects' || force) renderDefects(force);
+    if (activeTab === 'summary' || force) renderSummary(s);
+  }
+
+  // ------------------------------------------------------------------ polling
+  let polling = false;
+  async function poll() {
+    if (polling) return; polling = true;
+    try {
+      const r = await fetch('/api/state', { cache: 'no-store' });
+      const s = await r.json();
+      const wasOffline = !online; online = true;
+      if (s.version !== lastVersion || wasOffline) { lastVersion = s.version; S = s; renderAll(s, false); }
+      else if (s.status === 'live' && S) { S.fps = s.fps; renderStatus(s); }
+    } catch {
+      if (online) { online = false; if (S) renderStatus(S); else renderStatus({ model: { status: 'error' }, status: 'idle', source: {} }); }
+    } finally { polling = false; }
+  }
+  setInterval(poll, 500);
+  poll();
+  window.addEventListener('resize', () => {
+    moveInd($('tabs'), $('tabInd'), document.querySelector('.tab.active'));
+    const a = document.querySelector('#seg button.active'); if (a) moveInd($('seg'), $('segInd'), a);
+  });
+  document.fonts?.ready.then(() => { moveInd($('tabs'), $('tabInd'), document.querySelector('.tab.active')); renderSection(S?.section || SECTIONS[0]); });
+  renderSection(SECTIONS[0]);
+  requestAnimationFrame(() => moveInd($('tabs'), $('tabInd'), document.querySelector('.tab.active')));
+})();
+</script>
+</body>
+</html>

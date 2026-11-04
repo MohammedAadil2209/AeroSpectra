@@ -1,0 +1,16 @@
+# frontend
+frontend/node_modules/
+frontend/dist/
+# backend
+backend/.venv/
+backend/__pycache__/
+**/__pycache__/
+backend/aerospectra.db
+backend/evidence/*
+backend/uploads/*
+backend/recordings/*
+!backend/**/.gitkeep
+# model weights (large) — keep the folder
+backend/models/*.pt
+.DS_Store
+.env
