@@ -6,7 +6,7 @@ import { aircraftService, detectionService, inspectionService } from '@/services
 import { InspectionTable } from '@/components/inspection/InspectionTable';
 import { DetectionTable } from '@/components/defects/DetectionTable';
 import { CategoryDonut } from '@/components/analytics/Charts';
-import { DemoBadge, EmptyState, ErrorState, KeyValue, Loading, PageHeader, Panel, StatTile } from '@/components/ui/primitives';
+import { EmptyState, ErrorState, KeyValue, Loading, PageHeader, Panel, StatTile } from '@/components/ui/primitives';
 import { fmtDateTime } from '@/utils/format';
 import type { Category } from '@/types';
 
@@ -30,7 +30,7 @@ export default function AircraftDetail() {
       <PageHeader
         eyebrow="Aircraft record"
         title={`${a.id} · ${a.model}`}
-        subtitle={<span className="flex items-center gap-2">{a.registration} · {a.operator || 'Operator not set'} {a.is_demo && <DemoBadge label="Fictional demo aircraft" />}</span>}
+        subtitle={<span className="flex items-center gap-2">{a.registration} · {a.operator || 'Operator not set'}</span>}
         actions={
           <button className="btn btn-primary" onClick={() => navigate(`/live?source=${a.is_demo ? 'simulation' : 'upload'}&aircraft=${encodeURIComponent(a.id)}`)}>
             <PlayCircle className="size-4" /> Inspect this aircraft
@@ -50,7 +50,6 @@ export default function AircraftDetail() {
           <KeyValue k="Registration" v={a.registration} mono />
           <KeyValue k="Operator" v={a.operator || '—'} />
           <KeyValue k="Base" v={a.base || '—'} />
-          <KeyValue k="Record type" v={a.is_demo ? 'Demonstration (fictional)' : 'Registered (real)'} />
         </Panel>
         <Panel title="Findings by category" className="lg:col-span-2">
           <CategoryDonut byCategory={byCat} height={170} />

@@ -103,7 +103,7 @@ function DroneRig({ mission, droneCam, fov }: { mission: MissionController; dron
         <group ref={camMount} position={[0.26, -0.15, 0]} />
       </group>
       {/* downward position marker light */}
-      <pointLight position={[0, -0.4, 0]} intensity={0.6} distance={4} color="#8fbcd8" />
+      <pointLight position={[0, -0.4, 0]} intensity={0.6} distance={4} color="#9fc0d6" />
     </group>
   );
 }
@@ -112,7 +112,7 @@ function DroneRig({ mission, droneCam, fov }: { mission: MissionController; dron
 function makeLabel(text: string, bg: string, fg: string) {
   const c = document.createElement('canvas');
   const g = c.getContext('2d')!;
-  const font = '600 44px Inter, system-ui, sans-serif';
+  const font = '700 44px Lato, system-ui, sans-serif';
   g.font = font;
   const w = Math.ceil(g.measureText(text).width) + 40;
   c.width = w;
@@ -131,7 +131,7 @@ function makeLabel(text: string, bg: string, fg: string) {
   return { tex, aspect: w / 72 };
 }
 
-function Label({ text, position, bg = 'rgba(0,19,30,0.82)', fg = '#fdf0d5', height = 1.5 }: { text: string; position: [number, number, number]; bg?: string; fg?: string; height?: number }) {
+function Label({ text, position, bg = 'rgba(0,19,30,0.82)', fg = '#fcf4db', height = 1.5 }: { text: string; position: [number, number, number]; bg?: string; fg?: string; height?: number }) {
   const { tex, aspect } = useMemo(() => makeLabel(text, bg, fg), [text, bg, fg]);
   useEffect(() => () => tex.dispose(), [tex]);
   return (
@@ -162,17 +162,17 @@ function FlightPath({ mission, visible, labels }: { mission: MissionController; 
   if (!visible) return null;
   return (
     <group>
-      <Line ref={setLayer as never} points={data.pts} color="#669bbc" lineWidth={2.2} transparent opacity={0.95} />
-      <Line ref={setLayer as never} points={data.ground} color="#669bbc" lineWidth={1} dashed dashSize={0.8} gapSize={0.6} transparent opacity={0.35} />
+      <Line ref={setLayer as never} points={data.pts} color="#5c839e" lineWidth={2.2} transparent opacity={0.95} />
+      <Line ref={setLayer as never} points={data.ground} color="#5c839e" lineWidth={1} dashed dashSize={0.8} gapSize={0.6} transparent opacity={0.35} />
       <mesh ref={setLayer} rotation={[-Math.PI / 2, 0, 0]} position={[data.start.x, 0.03, data.start.z]}>
         <ringGeometry args={[1.0, 1.25, 40]} />
-        <meshBasicMaterial color="#fdf0d5" transparent opacity={0.8} />
+        <meshBasicMaterial color="#fcf4db" transparent opacity={0.8} />
       </mesh>
       {data.marks.map((m) => (
         <group key={m.section} position={m.pos}>
           <mesh ref={setLayer}>
             <sphereGeometry args={[0.16, 12, 12]} />
-            <meshBasicMaterial color="#fdf0d5" />
+            <meshBasicMaterial color="#fcf4db" />
           </mesh>
           {labels && <Label text={m.section} position={[0, 1.1, 0]} />}
         </group>
@@ -322,8 +322,8 @@ export function SimulationScene({ mission, opts, captureRef, onAircraftSource }:
         gl.toneMappingExposure = 1.05;
       }}
     >
-      <color attach="background" args={['#081722']} />
-      <fog attach="fog" args={['#081722', 70, 190]} />
+      <color attach="background" args={['#071e2a']} />
+      <fog attach="fog" args={['#071e2a', 70, 190]} />
       <HangarEnvironment lowPower={opts.lowPower} hideRoof={opts.view === 'top'} />
       <AircraftModel procedural={<ProceduralAircraft />} onSource={onAircraftSource} />
       <DroneRig mission={mission} droneCam={droneCam} fov={opts.fov} />

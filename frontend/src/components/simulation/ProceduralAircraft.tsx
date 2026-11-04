@@ -7,8 +7,8 @@ import * as THREE from 'three';
 
 const PAINT = new THREE.MeshStandardMaterial({ color: '#e8ecef', metalness: 0.35, roughness: 0.38 });
 const PAINT_GREY = new THREE.MeshStandardMaterial({ color: '#b9c2c9', metalness: 0.5, roughness: 0.4 });
-const NAVY = new THREE.MeshStandardMaterial({ color: '#003049', metalness: 0.3, roughness: 0.45 });
-const CRIMSON = new THREE.MeshStandardMaterial({ color: '#c1121f', metalness: 0.25, roughness: 0.45 });
+const NAVY = new THREE.MeshStandardMaterial({ color: '#092635', metalness: 0.3, roughness: 0.45 });
+const CRIMSON = new THREE.MeshStandardMaterial({ color: '#7d0a0a', metalness: 0.25, roughness: 0.45 });
 const GLASS = new THREE.MeshStandardMaterial({ color: '#0b1a26', metalness: 0.9, roughness: 0.12 });
 const DARK = new THREE.MeshStandardMaterial({ color: '#1b232a', metalness: 0.6, roughness: 0.5 });
 const RUBBER = new THREE.MeshStandardMaterial({ color: '#111417', roughness: 0.9 });
@@ -164,10 +164,10 @@ export function ProceduralAircraft() {
 
       {/* wings (low-wing, 5° dihedral) */}
       <group position={[0, FY - 1.15, 0]}>
-        <mesh geometry={geo.leftWing} castShadow receiveShadow rotation={[-0.085, 0, 0]}>
+        <mesh geometry={geo.leftWing} castShadow receiveShadow rotation={[0.085, 0, 0]}>
           <primitive object={PAINT_GREY} attach="material" />
         </mesh>
-        <mesh geometry={geo.rightWing} castShadow receiveShadow rotation={[0.085, 0, 0]}>
+        <mesh geometry={geo.rightWing} castShadow receiveShadow rotation={[-0.085, 0, 0]}>
           <primitive object={PAINT_GREY} attach="material" />
         </mesh>
         {/* winglets */}

@@ -144,3 +144,13 @@ Regenerate the demo dataset: `cd backend && .venv/bin/python scripts/generate_de
 Palette from coolors `780000 · C1121F · FDF0D5 · 003049 · 669BBC`: navy-derived control-room surfaces, cream text,
 steel-blue accents, crimson reserved for the primary action and critical findings; green/amber only for operational/warning state.
 Defect category colours (crack `#D3263A`, dent `#4F9BD4`, corrosion `#AF911A`) were validated for colour-blind separation on the dark surface.
+
+---
+
+## AeroScan (standalone YOLO inspection dashboard)
+
+`aeroscan/` is a self-contained FastAPI and vanilla-JS dashboard for the trained YOLO exterior-defect model.
+It runs live drone RTSP, scrcpy screen mirroring, a webcam, or uploaded images and videos, and uses ByteTrack
+to count each unique defect once.
+Run it with `cd aeroscan && pip install -r requirements.txt && python server.py`, then open http://localhost:8000.
+See [aeroscan/README.md](aeroscan/README.md).

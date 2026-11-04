@@ -73,11 +73,9 @@ export default function Dashboard() {
       <ScopeNotice />
 
       <AircraftHero detections={recent.data} fleet={fleet.data}>
-        <div>
-          <div className="text-[11px] uppercase tracking-[0.18em] text-steel-bright">Airframe defect map</div>
-          <h2 className="font-display text-2xl text-ink mt-1">Where findings were recorded</h2>
-          <p className="text-sm text-ink-2 mt-1">Each pin is a potential defect placed on the section it was found on. Hover for details, click to open the record.</p>
-        </div>
+        <div className="text-[11px] uppercase tracking-[0.18em] text-steel-bright">Airframe defect map</div>
+        <h2 className="font-display text-3xl text-ink mt-1">Where the damage is</h2>
+        <p className="text-sm text-muted mt-1">Hover any part of the aircraft to inspect its recorded findings.</p>
       </AircraftHero>
 
       {/* operational status strip */}
@@ -100,10 +98,10 @@ export default function Dashboard() {
             Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="h-[92px]" />)
           ) : (
             <>
-              <StatTile label="Inspections" value={a.total_inspections} sub={`${scope === 'demo' ? 'demo' : 'real'} records`} icon={<ClipboardCheck className="size-4" />} onClick={() => navigate('/inspections')} />
-              <StatTile label="Potential defects" value={a.total_detections} sub={`${a.by_category.crack} crack · ${a.by_category.dent} dent · ${a.by_category.corrosion} corr.`} icon={<ScanSearch className="size-4" />} tone="steel" onClick={() => navigate('/defects')} />
+              <StatTile label="Inspections" value={a.total_inspections} sub="inspection records" icon={<ClipboardCheck className="size-4" />} surface="dark" onClick={() => navigate('/inspections')} />
+              <StatTile label="Potential defects" value={a.total_detections} sub={`${a.by_category.crack} crack · ${a.by_category.dent} dent · ${a.by_category.corrosion} corr.`} icon={<ScanSearch className="size-4" />} tone="steel" surface="secondary" onClick={() => navigate('/defects')} />
               <StatTile label="High-priority" value={a.high_priority} sub="AI-triaged, not certified" icon={<ShieldAlert className="size-4" />} tone="crit" onClick={() => navigate('/defects')} />
-              <StatTile label="Pending review" value={a.pending_reviews} sub="awaiting human reviewer" icon={<TriangleAlert className="size-4" />} tone="warn" onClick={() => navigate('/defects?status=pending')} />
+              <StatTile label="Pending review" value={a.pending_reviews} sub="awaiting human reviewer" icon={<TriangleAlert className="size-4" />} tone="warn" surface="highlight" onClick={() => navigate('/defects?status=pending')} />
               <StatTile label="Completed" value={a.completed_inspections} sub="inspection sessions" icon={<CheckCircle2 className="size-4" />} tone="ok" />
               <StatTile label="Active now" value={active ? 1 : 0} sub={active ? active.inspection_id : 'no session running'} icon={<Activity className="size-4" />} tone={active ? 'crit' : 'default'} onClick={() => navigate('/live')} />
               <StatTile

@@ -61,7 +61,7 @@ export function HangarEnvironment({ lowPower, hideRoof }: { lowPower?: boolean; 
       {/* stand markings: centreline + inspection zone (cream) and safety boundary (crimson) */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, 0]}>
         <planeGeometry args={[62, 0.22]} />
-        <meshBasicMaterial color="#fdf0d5" transparent opacity={0.55} />
+        <meshBasicMaterial color="#fcf4db" transparent opacity={0.55} />
       </mesh>
       {[-1, 1].map((s) => (
         <mesh key={s} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.012, s * 26]}>
@@ -108,7 +108,7 @@ export function HangarEnvironment({ lowPower, hideRoof }: { lowPower?: boolean; 
       <group position={[24, 0, -18]}>
         <mesh castShadow position={[0, 1.4, 0]}>
           <boxGeometry args={[3, 0.15, 1.6]} />
-          <meshStandardMaterial color="#669bbc" metalness={0.4} roughness={0.5} />
+          <meshStandardMaterial color="#5c839e" metalness={0.4} roughness={0.5} />
         </mesh>
         {[[-1.4, -0.7], [1.4, -0.7], [-1.4, 0.7], [1.4, 0.7]].map(([x, z]) => (
           <mesh key={`${x}${z}`} castShadow position={[x, 0.7, z]}>

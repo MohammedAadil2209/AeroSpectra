@@ -4,11 +4,11 @@ import { Boxes, Camera, Upload, X } from 'lucide-react';
 import type { Aircraft, SourceType } from '@/types';
 import { aircraftService } from '@/services/dataService';
 import { useApp } from '@/context/AppContext';
-import { cx, DemoBadge } from '@/components/ui/primitives';
+import { cx } from '@/components/ui/primitives';
 
 const SOURCES: { value: SourceType; label: string; icon: typeof Camera; body: string }[] = [
-  { value: 'simulation', label: 'Simulation', icon: Boxes, body: 'Synthetic footage + 3D drone mission. Creates DEMO records.' },
-  { value: 'upload', label: 'Uploaded Video', icon: Upload, body: 'Process a recorded drone video file. Reliable demo fallback.' },
+  { value: 'simulation', label: 'Simulation', icon: Boxes, body: 'Synthetic footage + 3D drone mission.' },
+  { value: 'upload', label: 'Uploaded Video', icon: Upload, body: 'Process a recorded drone video file.' },
   { value: 'camera', label: 'Live Camera', icon: Camera, body: 'Real camera feed via OpenCV (device index or verified stream URL).' },
 ];
 
@@ -76,7 +76,7 @@ export function NewInspectionDialog({ open, onClose }: { open: boolean; onClose:
           </div>
           <div>
             <div className="label flex items-center gap-2">
-              2 · Aircraft {scope === 'demo' ? <DemoBadge label="Demo fleet" /> : <span className="chip text-ink-2 border-line">Registered fleet</span>}
+              2 · Aircraft {scope === 'demo' ? null : <span className="chip text-ink-2 border-line">Registered fleet</span>}
             </div>
             {loading ? (
               <div className="field flex items-center text-muted">Loading aircraft…</div>

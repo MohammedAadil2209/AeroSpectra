@@ -7,7 +7,7 @@ import { mediaUrl } from '@/services/api';
 import { DetectionTable } from '@/components/defects/DetectionTable';
 import { ReportButton } from '@/components/reports/ReportButton';
 import { CategoryDonut } from '@/components/analytics/Charts';
-import { Banner, DemoBadge, EmptyState, ErrorState, InspectionStatusChip, KeyValue, Loading, PageHeader, Panel, SourceChip, StatTile } from '@/components/ui/primitives';
+import { Banner, EmptyState, ErrorState, InspectionStatusChip, KeyValue, Loading, PageHeader, Panel, SourceChip, StatTile } from '@/components/ui/primitives';
 import { fmtDateTime, fmtDuration } from '@/utils/format';
 import { DETECTION_MODE_LABEL, SECTIONS } from '@/utils/labels';
 import type { Category } from '@/types';
@@ -29,7 +29,7 @@ export default function InspectionDetail() {
       <PageHeader
         eyebrow="Inspection session"
         title={i.id}
-        subtitle={<span className="flex flex-wrap items-center gap-2"><SourceChip source={i.source} /><InspectionStatusChip status={i.status} />{i.is_demo && <DemoBadge />}<span>{DETECTION_MODE_LABEL[i.detection_mode]}</span></span>}
+        subtitle={<span className="flex flex-wrap items-center gap-2"><SourceChip source={i.source} /><InspectionStatusChip status={i.status} /><span>{DETECTION_MODE_LABEL[i.detection_mode]}</span></span>}
         actions={<ReportButton inspectionId={i.id} scope={i.is_demo ? 'demo' : 'real'} className="btn-primary" />}
       />
       {i.error && <div className="mb-4"><Banner tone="warn">{i.error}</Banner></div>}

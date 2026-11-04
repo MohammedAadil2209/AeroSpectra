@@ -1,7 +1,7 @@
 import { Film } from 'lucide-react';
 import type { Inspection } from '@/types';
 import { mediaUrl } from '@/services/api';
-import { DemoBadge, InspectionStatusChip, SourceChip } from '@/components/ui/primitives';
+import { InspectionStatusChip, SourceChip } from '@/components/ui/primitives';
 import { fmtDateTime, fmtDuration } from '@/utils/format';
 import { DETECTION_MODE_LABEL } from '@/utils/labels';
 
@@ -39,8 +39,6 @@ export function InspectionTable({ rows, onOpen, showAircraft = true }: { rows: I
                   <a href={mediaUrl(i.recording_url) ?? '#'} onClick={(e) => e.stopPropagation()} className="inline-flex items-center gap-1 text-steel-bright hover:underline" download>
                     <Film className="size-3.5" /> Recording
                   </a>
-                ) : i.is_demo ? (
-                  <DemoBadge label="demo" />
                 ) : (
                   <span className="text-faint">{i.detection_count ? 'Evidence images' : '—'}</span>
                 )}

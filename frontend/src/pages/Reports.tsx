@@ -5,7 +5,7 @@ import { useAsync } from '@/hooks/useAsync';
 import { inspectionService } from '@/services/dataService';
 import { ScopeNotice } from '@/components/layout/ScopeNotice';
 import { ReportButton } from '@/components/reports/ReportButton';
-import { DemoBadge, EmptyState, ErrorState, InspectionStatusChip, Loading, PageHeader, Panel, SourceChip } from '@/components/ui/primitives';
+import { EmptyState, ErrorState, InspectionStatusChip, Loading, PageHeader, Panel, SourceChip } from '@/components/ui/primitives';
 import { fmtDateTime, fmtDuration } from '@/utils/format';
 
 export default function Reports() {
@@ -32,7 +32,6 @@ export default function Reports() {
                     <span className="num text-sm text-ink">{i.id}</span>
                     <SourceChip source={i.source} />
                     <InspectionStatusChip status={i.status} />
-                    {i.is_demo && <DemoBadge label="simulated findings" />}
                   </div>
                   <div className="text-xs text-muted mt-1">{i.aircraft_id} · {fmtDateTime(i.started_at)} · {fmtDuration(i.duration_s)} · {i.detection_count} potential defect(s)</div>
                 </button>

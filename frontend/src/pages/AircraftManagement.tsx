@@ -6,7 +6,7 @@ import { useAsync } from '@/hooks/useAsync';
 import { aircraftService } from '@/services/dataService';
 import { ScopeNotice } from '@/components/layout/ScopeNotice';
 import { Drawer } from '@/components/ui/Drawer';
-import { DemoBadge, EmptyState, ErrorState, Loading, PageHeader, Panel } from '@/components/ui/primitives';
+import { EmptyState, ErrorState, Loading, PageHeader, Panel } from '@/components/ui/primitives';
 import { fmtDate } from '@/utils/format';
 
 function RegisterForm({ onDone }: { onDone: () => void }) {
@@ -40,7 +40,7 @@ function RegisterForm({ onDone }: { onDone: () => void }) {
         }
       }}
     >
-      <p className="text-sm text-muted">Registered aircraft are <b className="text-ink">real records</b> used for Live Camera and Uploaded Video inspections. Demo aircraft come from the demo dataset.</p>
+      <p className="text-sm text-muted">Registered aircraft are <b className="text-ink">real records</b> used for Live Camera and Uploaded Video inspections.</p>
       {field('id', 'Aircraft ID', 'e.g. AC-001', true)}
       {field('registration', 'Registration number', 'as painted on the airframe', true)}
       {field('model', 'Aircraft model', 'e.g. A320neo', true)}
@@ -89,7 +89,7 @@ export default function AircraftManagement() {
               <tbody>
                 {list.data.map((a) => (
                   <tr key={a.id} className="clickable" onClick={() => navigate(`/aircraft/${a.id}`)} tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && navigate(`/aircraft/${a.id}`)}>
-                    <td><span className="num text-ink">{a.id}</span> {a.is_demo && <DemoBadge label="demo" className="ml-1" />}</td>
+                    <td><span className="num text-ink">{a.id}</span></td>
                     <td className="text-ink">{a.model}</td>
                     <td className="num text-xs">{a.registration}</td>
                     <td className="text-xs">{a.operator || '—'}</td>
