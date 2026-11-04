@@ -14,3 +14,12 @@ backend/recordings/*
 backend/models/*.pt
 .DS_Store
 .env
+venv/
+.venv/
+**/venv/
+**/.venv/
+node_modules/
+__pycache__/
+*.pyc
+**/.env
+.env
