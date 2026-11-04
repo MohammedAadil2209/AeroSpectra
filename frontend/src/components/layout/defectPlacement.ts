@@ -33,7 +33,8 @@ function ring(x: number, r: number, theta: number, cy = FY, cz = 0) {
   return { p: new THREE.Vector3(x, cy + r * n.y, cz + r * n.z), n };
 }
 
-const WING_M = (side: 1 | -1) => new THREE.Matrix4().makeTranslation(0, FY - 1.15, 0).multiply(new THREE.Matrix4().makeRotationX(side * 0.085));
+// 5° dihedral, tips up: matches ProceduralAircraft (left wing +x rotation, right wing -x rotation)
+const WING_M = (side: 1 | -1) => new THREE.Matrix4().makeTranslation(0, FY - 1.15, 0).multiply(new THREE.Matrix4().makeRotationX(-side * 0.085));
 
 export interface Placement { position: THREE.Vector3; normal: THREE.Vector3 }
 

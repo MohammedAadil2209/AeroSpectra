@@ -55,7 +55,7 @@ function Slider({ label, value, min, max, step, unit, onChange, hint }: {
         <span className="text-ink-2 font-medium">{label}</span>
         <span className="num text-ink">{value.toFixed(step < 1 ? 1 : 0)} {unit}</span>
       </div>
-      <input type="range" min={min} max={max} step={step} value={value} onChange={(e) => onChange(Number(e.target.value))} className="w-full accent-[#669bbc]" />
+      <input type="range" min={min} max={max} step={step} value={value} onChange={(e) => onChange(Number(e.target.value))} className="w-full accent-[#5c839e]" />
       {hint && <div className="text-[11px] text-faint mt-0.5">{hint}</div>}
     </label>
   );

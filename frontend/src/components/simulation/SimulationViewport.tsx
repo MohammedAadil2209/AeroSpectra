@@ -96,7 +96,7 @@ export function SimulationViewport({ mission, snap, opts, captureRef, className,
   );
 
   return (
-    <div ref={box} className={cx('theme-dark relative overflow-hidden bg-[#081722]', className)}>
+    <div ref={box} className={cx('theme-dark relative overflow-hidden bg-[#071e2a]', className)}>
       {gl ? (
         <SceneBoundary>
           <SimulationScene mission={mission} opts={opts} captureRef={captureRef} onAircraftSource={setAircraftSrc} />

@@ -275,6 +275,10 @@ class RealTimeVideo:
         self.seq += 1
         return frame, self.seq
 
+    def rebase(self):
+        """Restart the wall clock at the current frame (called after the slow first inference / warm-up)."""
+        self.t0 = time.perf_counter() - self.idx / self.fps
+
     @property
     def position_s(self) -> float:
         return self.idx / self.fps
@@ -407,6 +411,8 @@ class Engine:
             frame = cv2.resize(frame, (STREAM_MAX_W, int(h * STREAM_MAX_W / w)), interpolation=cv2.INTER_AREA)
         ok, buf = cv2.imencode(".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, 80])
         if ok and gen == self.gen:
+            if self.frame_jpeg is None:
+                self.touch()  # first frame: let the page switch from the empty state right away
             self.frame_jpeg = buf.tobytes()
             self.frame_size = (w, h)
             self.frame_seq += 1
@@ -527,6 +533,8 @@ class Engine:
             ema = (1 / dt) if ema == 0 else ema * 0.9 + (1 / max(dt, 1e-6)) * 0.1
             self.fps = round(ema, 1)
             if first:
+                if hasattr(reader, "rebase"):
+                    reader.rebase()  # don't skip the opening seconds of a video while the tracker warms up
                 self.set_status(gen, "live")
                 first = False
 
@@ -599,11 +607,16 @@ class Engine:
         c, d = int(min(w, x2 + pad)), int(min(h, y2 + pad))
         crop = frame[b:d, a:c].copy()
         if crop.size == 0:
-            crop = frame
-        cv2.rectangle(crop, (int(x1 - a), int(y1 - b)), (int(x2 - a), int(y2 - b)), (255, 255, 255), 1, cv2.LINE_AA)
-        if crop.shape[1] < 320:  # upscale tiny crops so the card image is not a blur of 3 pixels
-            s = 320 / crop.shape[1]
+            crop, a, b = frame.copy(), 0, 0
+        s = 320 / crop.shape[1] if crop.shape[1] < 320 else 1.0  # upscale tiny crops for the snapshot card
+        if s != 1.0:
             crop = cv2.resize(crop, None, fx=s, fy=s, interpolation=cv2.INTER_CUBIC)
+        # thin corner brackets mark the defect without hiding it
+        p1, p2 = (int((x1 - a) * s), int((y1 - b) * s)), (int((x2 - a) * s), int((y2 - b) * s))
+        L = max(8, int(min(p2[0] - p1[0], p2[1] - p1[1]) * 0.18))
+        for (cx, cy, dx, dy) in ((p1[0], p1[1], 1, 1), (p2[0], p1[1], -1, 1), (p1[0], p2[1], 1, -1), (p2[0], p2[1], -1, -1)):
+            cv2.line(crop, (cx, cy), (cx + dx * L, cy), (255, 255, 255), 2, cv2.LINE_AA)
+            cv2.line(crop, (cx, cy), (cx, cy + dy * L), (255, 255, 255), 2, cv2.LINE_AA)
         ok, buf = cv2.imencode(".jpg", crop, [cv2.IMWRITE_JPEG_QUALITY, 90])
         return buf.tobytes() if ok else b""
 
@@ -727,6 +740,11 @@ async def upload(file: UploadFile = File(...)):
     with dest.open("wb") as f:
         while chunk := await file.read(1 << 20):
             f.write(chunk)
+    for old in sorted(UPLOADS.iterdir(), key=lambda f: f.stat().st_mtime)[:-5]:  # keep the 5 newest uploads
+        try:
+            old.unlink()
+        except OSError:
+            pass  # still open by a reader on Windows
     src = {"kind": kind, "label": "Image" if kind == "image" else "Video", "detail": file.filename, "arg": str(dest)}
     engine.start(src, engine.run_image if kind == "image" else engine.run_video)
     return {"status": "connecting", "source": {k: v for k, v in src.items() if k != "arg"}}
@@ -788,11 +806,14 @@ async def stream(request: Request):
     boundary = "frame"
 
     async def gen():
-        last = -1
+        # Browsers render a multipart part only when the next one starts, so a static frame (finished
+        # video, single image, page opened after a run) is re-sent every 0.5 s to make it appear.
+        last, sent_at = -1, 0.0
         while not await request.is_disconnected():
             jpg, seq = engine.frame_jpeg, engine.frame_seq
-            if jpg is not None and seq != last:
-                last = seq
+            now = time.monotonic()
+            if jpg is not None and (seq != last or now - sent_at > 0.5):
+                last, sent_at = seq, now
                 yield (f"--{boundary}\r\nContent-Type: image/jpeg\r\nContent-Length: {len(jpg)}\r\n\r\n").encode() + jpg + b"\r\n"
             await asyncio.sleep(0.02)
 

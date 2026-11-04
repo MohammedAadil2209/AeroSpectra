@@ -6,7 +6,7 @@ import { aircraftService, detectionService } from '@/services/dataService';
 import { useAsync } from '@/hooks/useAsync';
 import { useApp } from '@/context/AppContext';
 import { EvidenceImage } from '@/components/ui/EvidenceImage';
-import { CategoryChip, DemoBadge, KeyValue, OriginBadge, PriorityChip, ReviewChip, cx } from '@/components/ui/primitives';
+import { CategoryChip, KeyValue, OriginBadge, PriorityChip, ReviewChip, cx } from '@/components/ui/primitives';
 import { REVIEW_LABEL, REVIEW_STATUSES } from '@/utils/labels';
 import { fmtClock, fmtDateTime, pct } from '@/utils/format';
 
@@ -75,7 +75,6 @@ export function DefectDetail({ detection, scope, onUpdated }: { detection: Detec
         <OriginBadge origin={detection.origin} />
         <PriorityChip priority={detection.priority} />
         <ReviewChip status={detection.review_status} />
-        {detection.is_demo && <DemoBadge />}
       </div>
       <EvidenceImage url={detection.evidence_url} bbox={detection.bbox} category={detection.category} confidence={detection.confidence} className="border border-line" />
       <Lifecycle d={detection} />

@@ -37,15 +37,23 @@ const NAV = [
 export function Logo({ compact }: { compact?: boolean }) {
   return (
     <div className="flex items-center gap-2.5">
-      <svg viewBox="0 0 32 32" className="size-8 shrink-0" aria-hidden>
-        <rect width="32" height="32" rx="7" fill="#003049" stroke="#669bbc" strokeOpacity=".4" />
-        <path d="M6 19l10-11 10 11h-4l-6-6.6L10 19z" fill="#FDF0D5" />
-        <circle cx="16" cy="22.5" r="2.6" fill="#C1121F" />
+      {/* Mark: top-down airliner inside drone-camera scan brackets, with a detected defect on the wing */}
+      <svg viewBox="0 0 32 32" className="size-9 shrink-0 drop-shadow-[0_2px_6px_rgba(0,0,0,0.25)]" aria-hidden>
+        <rect width="32" height="32" rx="7.5" fill="#092635" />
+        <path
+          d="M4 9V5.5A1.5 1.5 0 0 1 5.5 4H9M23 4h3.5A1.5 1.5 0 0 1 28 5.5V9M28 23v3.5a1.5 1.5 0 0 1-1.5 1.5H23M9 28H5.5A1.5 1.5 0 0 1 4 26.5V23"
+          fill="none" stroke="#9FC0D6" strokeWidth="1.5" strokeLinecap="round"
+        />
+        <path
+          d="M16 5.2c.95 0 1.35 1.05 1.35 2.2v4.75l7.9 3.85v1.5l-7.9-1.95-.1 5.6 2.75 1.9v1.25l-3.4-.8L16 25.9l-.6-2.4-3.4.8v-1.25l2.75-1.9-.1-5.6-7.9 1.95v-1.5l7.9-3.85V7.4c0-1.15.4-2.2 1.35-2.2z"
+          fill="#FCF4DB"
+        />
+        <circle cx="21.6" cy="15.9" r="2.6" fill="#E5383B" fillOpacity=".28" />
+        <circle cx="21.6" cy="15.9" r="1.35" fill="#E5383B" />
       </svg>
       {!compact && (
         <div className="leading-tight">
           <div className="font-display font-bold tracking-tight text-[15px] text-ink">AEROSPECTRA</div>
-          <div className="text-[9.5px] tracking-[0.2em] text-steel font-semibold">DETECT · VISUALIZE · DOCUMENT</div>
         </div>
       )}
     </div>
@@ -69,7 +77,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
             className={({ isActive }) =>
               cx(
                 'group flex items-center gap-3 rounded-lg px-3 h-9 text-[13px] font-medium transition-colors relative',
-                isActive ? 'bg-[#0d4766] text-ink before:absolute before:left-0 before:top-2 before:bottom-2 before:w-[3px] before:rounded-r before:bg-crimson' : 'text-muted hover:text-ink hover:bg-surface-2',
+                isActive ? 'bg-surface-3 text-ink before:absolute before:left-0 before:top-2 before:bottom-2 before:w-[3px] before:rounded-r before:bg-cream' : 'text-muted hover:text-ink hover:bg-surface-2',
               )
             }
           >
@@ -153,13 +161,13 @@ export function AppLayout() {
   useEffect(() => setOpen(false), [loc.pathname]);
   return (
     <div className="flex h-full">
-      <aside className="theme-dark sidebar-navy hidden lg:block w-60 shrink-0 border-r border-line bg-surface">
+      <aside className="theme-dark sidebar-maroon hidden lg:block w-60 shrink-0 border-r border-line bg-surface">
         <SidebarContent />
       </aside>
       {open && (
         <div className="fixed inset-0 z-50 lg:hidden">
           <div className="absolute inset-0 bg-navy/40" onClick={() => setOpen(false)} />
-          <aside className="theme-dark sidebar-navy absolute left-0 top-0 bottom-0 w-64 bg-surface border-r border-line">
+          <aside className="theme-dark sidebar-maroon absolute left-0 top-0 bottom-0 w-64 bg-surface border-r border-line">
             <button className="absolute right-2 top-4 btn btn-ghost btn-sm" onClick={() => setOpen(false)} aria-label="Close navigation">
               <X className="size-4" />
             </button>

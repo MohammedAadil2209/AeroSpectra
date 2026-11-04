@@ -1,0 +1,6 @@
+# AeroScan dashboard — add to the environment that already has ultralytics + torch (CUDA) + opencv-python
+fastapi>=0.110
+uvicorn[standard]>=0.27
+python-multipart>=0.0.9
+mss>=9.0        # screen-mirror capture (scrcpy window)
+lap>=0.5.12     # ByteTrack assignment; ultralytics would otherwise try to auto-install it at first track() call

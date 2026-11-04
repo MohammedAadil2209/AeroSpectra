@@ -1,36 +1,37 @@
 @import "tailwindcss";
 
 /*
-  AeroSpectra palette (coolors 780000-c1121f-fdf0d5-003049-669bbc)
-  #780000 crimson-deep · #C1121F crimson · #FDF0D5 cream · #003049 navy · #669BBC steel
-  Dark control-room theme derived from navy; cream for text; crimson reserved for
-  critical findings and the primary action. Green/amber only for operational/warning state.
+  AeroSpectra palette
+  #640A09 sidebar · #7D0A0A primary buttons · #092635 dark cards · #5C839E secondary cards
+  #FCF4DB highlight cards · #F8F9FB main background · #FFFFFF content cards · #1E1E1E main typography
+  Green/amber/red remain reserved for operational state; category colours are validated separately.
 */
 @theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Space Grotesk", "Inter", ui-sans-serif, sans-serif;
+  --font-sans: "Lato", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: "Playfair Display Variable", "Playfair Display", Georgia, "Times New Roman", serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
 
-  --color-crimson-deep: #780000;
-  --color-crimson: #c1121f;
+  --color-maroon: #640a09;        /* sidebar */
+  --color-crimson: #7d0a0a;       /* primary buttons */
+  --color-crimson-deep: #640a09;  /* primary hover */
   --color-crimson-bright: #e5383b;
-  --color-cream: #fdf0d5;
-  --color-navy: #003049;
-  --color-steel: #669bbc;
-  --color-steel-bright: #2f6f96;  /* link / accent text (AA on white) */
+  --color-navy: #092635;          /* dark cards */
+  --color-steel: #5c839e;         /* secondary cards */
+  --color-cream: #fcf4db;         /* highlight cards */
+  --color-steel-bright: #3e6580;  /* link / accent text (AA on white) */
 
   /* LIGHT theme (default) */
-  --color-abyss: #f3f5f7;         /* app background */
-  --color-surface: #ffffff;       /* panels */
-  --color-surface-2: #f4f7f9;     /* raised / inputs */
-  --color-surface-3: #e6ecf0;     /* hover / tracks */
-  --color-line: rgb(0 48 73 / 0.11);
-  --color-line-strong: rgb(0 48 73 / 0.22);
+  --color-abyss: #f8f9fb;         /* main background */
+  --color-surface: #ffffff;       /* content cards */
+  --color-surface-2: #f3f5f8;     /* raised / inputs */
+  --color-surface-3: #e7ebf0;     /* hover / tracks */
+  --color-line: rgb(9 38 53 / 0.10);
+  --color-line-strong: rgb(9 38 53 / 0.20);
 
-  --color-ink: #0b2230;
-  --color-ink-2: #2c4253;
-  --color-muted: #5b7385;
-  --color-faint: #8597a5;
+  --color-ink: #1e1e1e;           /* main typography */
+  --color-ink-2: #3b4148;
+  --color-muted: #66717c;
+  --color-faint: #959ea8;
 
   --color-ok: #2e9e64;
   --color-warn: #d9921f;
@@ -39,9 +40,9 @@
   --color-warn-ink: #8a5a00;
   --color-crit-ink: #a50f1a;
 
-  --color-demo-ink: #003049;
-  --color-demo-line: rgb(0 48 73 / 0.25);
-  --color-demo-bg: #fdf0d5;
+  --color-demo-ink: #5a4410;
+  --color-demo-line: rgb(150 115 30 / 0.28);
+  --color-demo-bg: #fcf4db;
 
   /* category (validated: CVD ΔE ≥ 10 all pairs, light and dark surfaces) */
   --color-cat-crack: #d3263a;
@@ -49,32 +50,44 @@
   --color-cat-corrosion: #af911a;
 }
 
-/* Dark scope: navy sidebar and video / 3D viewports (monitor-style) */
+/* Dark scope: video / 3D viewports and dark cards (#092635 family) */
 .theme-dark {
-  --color-steel-bright: #8fbcd8;
-  --color-abyss: #00131e;
-  --color-surface: #011d2d;
-  --color-surface-2: #03263a;
-  --color-surface-3: #0a3550;
-  --color-line: rgb(102 155 188 / 0.16);
-  --color-line-strong: rgb(102 155 188 / 0.32);
-  --color-ink: #fdf0d5;
-  --color-ink-2: #c9d6df;
-  --color-muted: #8aa3b5;
-  --color-faint: #5d7a8e;
+  --color-steel-bright: #9fc0d6;
+  --color-abyss: #051923;
+  --color-surface: #092635;
+  --color-surface-2: #0e3346;
+  --color-surface-3: #164159;
+  --color-line: rgb(92 131 158 / 0.20);
+  --color-line-strong: rgb(92 131 158 / 0.38);
+  --color-ink: #fcf4db;
+  --color-ink-2: #d3dde4;
+  --color-muted: #93aabb;
+  --color-faint: #66839a;
   --color-ok: #4caf7d;
   --color-warn: #e0a43a;
   --color-crit: #e5383b;
   --color-ok-ink: #7fd6a6;
   --color-warn-ink: #f0c070;
   --color-crit-ink: #ff8a8c;
-  --color-demo-ink: #fdf0d5;
-  --color-demo-line: rgb(253 240 213 / 0.3);
-  --color-demo-bg: rgb(253 240 213 / 0.06);
+  --color-demo-ink: #fcf4db;
+  --color-demo-line: rgb(252 244 219 / 0.3);
+  --color-demo-bg: rgb(252 244 219 / 0.06);
   color: var(--color-ink);
   color-scheme: dark;
 }
-.sidebar-navy { --color-surface: #003049; --color-surface-2: #0a3d5a; --color-line: rgb(253 240 213 / 0.12); }
+/* Sidebar (#640A09): cream text, maroon surfaces */
+.sidebar-maroon {
+  --color-surface: #640a09;
+  --color-surface-2: #761614;
+  --color-surface-3: #8a2220;
+  --color-line: rgb(252 244 219 / 0.14);
+  --color-line-strong: rgb(252 244 219 / 0.28);
+  --color-ink: #fcf4db;
+  --color-ink-2: rgb(252 244 219 / 0.86);
+  --color-muted: rgb(252 244 219 / 0.68);
+  --color-faint: rgb(252 244 219 / 0.5);
+  --color-steel-bright: #fcf4db;
+}
 
 @layer base {
   html, body, #root { height: 100%; }
@@ -83,10 +96,11 @@
     color: var(--color-ink);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
-    font-feature-settings: "cv11", "ss01";
+    font-feature-settings: "kern", "liga";
   }
-  h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.01em; }
-  ::selection { background: rgb(193 18 31 / 0.2); }
+  h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.005em; }
+  h1, h2, h3, h4, .font-display { font-variant-numeric: lining-nums; }
+  ::selection { background: rgb(125 10 10 / 0.18); }
   *:focus-visible { outline: 2px solid var(--color-steel); outline-offset: 2px; border-radius: 4px; }
   input, select, textarea { color-scheme: light; }
 }
@@ -96,7 +110,7 @@
     background: var(--color-surface);
     border: 1px solid var(--color-line);
     border-radius: 12px;
-    box-shadow: 0 1px 2px rgb(0 48 73 / 0.04), 0 2px 8px -2px rgb(0 48 73 / 0.05);
+    box-shadow: 0 1px 2px rgb(9 38 53 / 0.04), 0 2px 8px -2px rgb(9 38 53 / 0.05);
   }
   .panel-head {
     display: flex; align-items: center; justify-content: space-between; gap: .75rem;
@@ -109,7 +123,7 @@
   .eyebrow {
     font-size: .66rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--color-muted);
   }
-  .num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+  .num { font-family: var(--font-mono); font-variant-numeric: lining-nums tabular-nums; }
 
   .btn {
     display: inline-flex; align-items: center; justify-content: center; gap: .45rem;
@@ -120,9 +134,9 @@
   .btn:hover:not(:disabled) { background: var(--color-surface-3); border-color: var(--color-steel); }
   .btn:disabled { opacity: .42; cursor: not-allowed; }
   .btn-primary { background: var(--color-crimson); border-color: var(--color-crimson); color: #fff; }
-  .btn-primary:hover:not(:disabled) { background: #780000; border-color: #780000; }
+  .btn-primary:hover:not(:disabled) { background: var(--color-crimson-deep); border-color: var(--color-crimson-deep); }
   .btn-steel { background: var(--color-navy); border-color: var(--color-navy); color: #fff; }
-  .btn-steel:hover:not(:disabled) { background: #0a4a6b; border-color: #0a4a6b; }
+  .btn-steel:hover:not(:disabled) { background: #123a4e; border-color: #123a4e; }
   .btn-ghost { background: transparent; border-color: transparent; color: var(--color-ink-2); }
   .btn-ghost:hover:not(:disabled) { background: var(--color-surface-2); border-color: var(--color-line); }
   .btn-sm { height: 1.85rem; padding: 0 .65rem; font-size: .75rem; }
@@ -153,14 +167,14 @@
   .table tbody tr.clickable:hover { background: var(--color-surface-2); }
 
   .demo-ribbon {
-    background: repeating-linear-gradient(135deg, rgb(102 155 188 / .12) 0 8px, transparent 8px 16px);
+    background: repeating-linear-gradient(135deg, rgb(92 131 158 / .12) 0 8px, transparent 8px 16px);
   }
 }
 
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #c5d1da; border-radius: 9999px; }
-::-webkit-scrollbar-thumb:hover { background: #669bbc; }
+::-webkit-scrollbar-thumb { background: #c9d3dc; border-radius: 9999px; }
+::-webkit-scrollbar-thumb:hover { background: #5c839e; }
 
 @keyframes pulse-dot { 0%,100% { opacity: 1 } 50% { opacity: .35 } }
 .pulse-dot { animation: pulse-dot 1.4s ease-in-out infinite; }

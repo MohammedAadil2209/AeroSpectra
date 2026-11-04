@@ -5,12 +5,13 @@
  */
 import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis, type TooltipProps } from 'recharts';
 import type { Analytics, Category, ReviewStatus } from '@/types';
-import { CATEGORIES, CATEGORY_COLOR, CATEGORY_LABEL, REVIEW_LABEL, REVIEW_STATUSES } from '@/utils/labels';
+import { CATEGORIES, CATEGORY_LABEL, REVIEW_LABEL, REVIEW_STATUSES } from '@/utils/labels';
+import { DEFECT_CHART_COLOR } from '@/components/layout/defectMapColors';
 
 const SURFACE = '#ffffff';
-const AXIS = { stroke: 'transparent', tick: { fill: '#5b7385', fontSize: 11 }, tickLine: false } as const;
+const AXIS = { stroke: 'transparent', tick: { fill: '#66717c', fontSize: 11 }, tickLine: false } as const;
 const GRID = { stroke: 'rgba(0,48,73,0.08)', vertical: false } as const;
-const REVIEW_COLOR: Record<ReviewStatus, string> = { pending: '#e0a43a', reviewed: '#669bbc', confirmed: '#d3263a', false_positive: '#5d7a8e' };
+const REVIEW_COLOR: Record<ReviewStatus, string> = { pending: '#e0a43a', reviewed: '#5c839e', confirmed: '#d3263a', false_positive: '#7a8794' };
 
 function ChartTooltip({ active, payload, label, labelFmt }: TooltipProps<number, string> & { labelFmt?: (l: string) => string }) {
   if (!active || !payload?.length) return null;
@@ -55,7 +56,7 @@ const shortDate = (d: string) => new Date(d + 'T00:00:00').toLocaleDateString(un
 export function DetectionTrendChart({ data, height = 240 }: { data: Analytics['trend']; height?: number }) {
   return (
     <div>
-      <Legend items={CATEGORIES.map((c) => ({ label: CATEGORY_LABEL[c], color: CATEGORY_COLOR[c] }))} />
+      <Legend items={CATEGORIES.map((c) => ({ label: CATEGORY_LABEL[c], color: DEFECT_CHART_COLOR[c] }))} />
       <div style={{ height }} className="mt-3">
         <ResponsiveContainer>
           <BarChart data={data} margin={{ top: 4, right: 4, left: -18, bottom: 0 }} barCategoryGap="22%">
@@ -70,7 +71,7 @@ export function DetectionTrendChart({ data, height = 240 }: { data: Analytics['t
                 dataKey={c}
                 name={CATEGORY_LABEL[c]}
                 stackId="a"
-                fill={CATEGORY_COLOR[c]}
+                fill={DEFECT_CHART_COLOR[c]}
                 stroke={SURFACE}
                 strokeWidth={2}
                 radius={i === CATEGORIES.length - 1 ? [4, 4, 0, 0] : 0}
@@ -93,7 +94,7 @@ export function InspectionsPerDayChart({ data, height = 200 }: { data: Analytics
           <XAxis dataKey="date" {...AXIS} tickFormatter={shortDate} minTickGap={18} />
           <YAxis {...AXIS} allowDecimals={false} />
           <Tooltip cursor={{ fill: 'rgba(102,155,188,0.08)' }} content={<ChartTooltip labelFmt={shortDate} />} />
-          <Bar isAnimationActive={false} dataKey="inspections" name="Inspections" fill="#669bbc" radius={[4, 4, 0, 0]} maxBarSize={22} />
+          <Bar isAnimationActive={false} dataKey="inspections" name="Inspections" fill="#5c839e" radius={[4, 4, 0, 0]} maxBarSize={22} />
         </BarChart>
       </ResponsiveContainer>
     </div>
@@ -102,7 +103,7 @@ export function InspectionsPerDayChart({ data, height = 200 }: { data: Analytics
 
 /** Category share — donut with centre total. */
 export function CategoryDonut({ byCategory, height = 200 }: { byCategory: Record<Category, number>; height?: number }) {
-  const data = CATEGORIES.map((c) => ({ name: CATEGORY_LABEL[c], value: byCategory[c] ?? 0, fill: CATEGORY_COLOR[c] }));
+  const data = CATEGORIES.map((c) => ({ name: CATEGORY_LABEL[c], value: byCategory[c] ?? 0, fill: DEFECT_CHART_COLOR[c] }));
   const total = data.reduce((s, d) => s + d.value, 0);
   return (
     <div className="@container">
@@ -147,9 +148,9 @@ function HBar({ rows, height }: { rows: { name: string; value: number; fill: str
         <BarChart data={rows} layout="vertical" margin={{ top: 0, right: 28, left: 0, bottom: 0 }} barCategoryGap="28%">
           <CartesianGrid stroke="rgba(0,48,73,0.08)" horizontal={false} />
           <XAxis type="number" {...AXIS} allowDecimals={false} />
-          <YAxis type="category" dataKey="name" {...AXIS} width={112} tick={{ fill: '#2c4253', fontSize: 12 }} />
+          <YAxis type="category" dataKey="name" {...AXIS} width={112} tick={{ fill: '#3b4148', fontSize: 12 }} />
           <Tooltip cursor={{ fill: 'rgba(102,155,188,0.08)' }} content={<ChartTooltip />} />
-          <Bar isAnimationActive={false} dataKey="value" name="Detections" radius={[0, 4, 4, 0]} maxBarSize={18} label={{ position: 'right', fill: '#2c4253', fontSize: 11 }}>
+          <Bar isAnimationActive={false} dataKey="value" name="Detections" radius={[0, 4, 4, 0]} maxBarSize={18} label={{ position: 'right', fill: '#3b4148', fontSize: 11 }}>
             {rows.map((r) => (
               <Cell key={r.name} fill={r.fill} />
             ))}
@@ -166,7 +167,7 @@ export function ReviewStatusChart({ byStatus }: { byStatus: Record<ReviewStatus,
 }
 
 export function SectionChart({ bySection }: { bySection: Record<string, number> }) {
-  const rows = Object.entries(bySection).slice(0, 8).map(([name, value]) => ({ name, value, fill: '#669bbc' }));
+  const rows = Object.entries(bySection).slice(0, 8).map(([name, value]) => ({ name, value, fill: '#5c839e' }));
   return <HBar rows={rows} height={Math.max(140, rows.length * 34)} />;
 }
 
@@ -179,7 +180,7 @@ export function ConfidenceHistogram({ data }: { data: Analytics['confidence_hist
           <XAxis dataKey="range" {...AXIS} />
           <YAxis {...AXIS} allowDecimals={false} />
           <Tooltip cursor={{ fill: 'rgba(102,155,188,0.08)' }} content={<ChartTooltip />} />
-          <Bar isAnimationActive={false} dataKey="count" name="Detections" fill="#669bbc" radius={[4, 4, 0, 0]} />
+          <Bar isAnimationActive={false} dataKey="count" name="Detections" fill="#5c839e" radius={[4, 4, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
     </div>

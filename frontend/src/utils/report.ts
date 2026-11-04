@@ -74,21 +74,19 @@ export async function generateInspectionReport(insp: InspectionDetail): Promise<
 
   header();
   let y = 30;
-  if (simulated) {
+  if (simulated && !insp.is_demo) {
     doc.setFillColor(...CREAM);
     doc.setDrawColor(...CRIMSON);
     doc.roundedRect(M, y, W - 2 * M, 13, 1.5, 1.5, 'FD');
     doc.setTextColor(...CRIMSON);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(9);
-    doc.text(insp.is_demo ? 'DEMONSTRATION DATA — SIMULATED FINDINGS' : 'NO AI MODEL — NO AUTOMATED FINDINGS', M + 4, y + 5.5);
+    doc.text('NO AI MODEL — NO AUTOMATED FINDINGS', M + 4, y + 5.5);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7.5);
     doc.setTextColor(...INK);
     doc.text(
-      insp.is_demo
-        ? 'Fictional aircraft/session. Detections are synthetic ground truth, not results of a trained AI model.'
-        : `Detection mode: ${DETECTION_MODE_LABEL[insp.detection_mode]}. Findings listed (if any) were not produced by a trained model.`,
+      `Detection mode: ${DETECTION_MODE_LABEL[insp.detection_mode]}. Findings listed (if any) were not produced by a trained model.`,
       M + 4,
       y + 10,
     );

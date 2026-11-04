@@ -40,7 +40,7 @@ export function DetectionPanel({ detections, mode, scope, running }: { detection
         </div>
       )}
       {mode === 'simulated' && (
-        <div className="m-3 rounded-lg border border-demo-line demo-ribbon p-3 text-xs text-demo-ink">
+        <div className="m-3 rounded-lg border border-line bg-surface-2 p-3 text-xs text-ink-2">
           <b>Simulated detections.</b> Boxes are synthetic ground truth from generated footage — not AI predictions.
         </div>
       )}

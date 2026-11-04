@@ -14,7 +14,7 @@ const PROP = new THREE.MeshStandardMaterial({ color: '#0e1418', metalness: 0.1, 
 const LENS = new THREE.MeshStandardMaterial({ color: '#05080b', metalness: 0.95, roughness: 0.05 });
 const LED_RED = new THREE.MeshStandardMaterial({ color: '#c1121f', emissive: '#e5383b', emissiveIntensity: 2 });
 const LED_GREEN = new THREE.MeshStandardMaterial({ color: '#2e8b57', emissive: '#4caf7d', emissiveIntensity: 2 });
-const ACCENT = new THREE.MeshStandardMaterial({ color: '#669bbc', metalness: 0.3, roughness: 0.4 });
+const ACCENT = new THREE.MeshStandardMaterial({ color: '#5c839e', metalness: 0.3, roughness: 0.4 });
 
 const ARMS: [number, number][] = [
   [0.48, 0.48], // front-right

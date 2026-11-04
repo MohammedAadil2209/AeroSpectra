@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { AlertTriangle, FlaskConical, Inbox, Loader2, RefreshCw, X } from 'lucide-react';
+import { AlertTriangle, Inbox, Loader2, RefreshCw, X } from 'lucide-react';
 import type { Category, ComponentStatus, InspectionStatus, Priority, ReviewStatus, SourceType } from '@/types';
 import {
   CATEGORY_COLOR,
@@ -70,15 +70,6 @@ export function SourceChip({ source }: { source: SourceType }) {
 }
 
 /** Explicit marker for demonstration / simulated content. */
-export function DemoBadge({ label = 'Demo data', className }: { label?: string; className?: string }) {
-  return (
-    <span className={cx('chip uppercase tracking-wider text-demo-ink border-demo-line bg-demo-bg', className)} title="Fictional demonstration data — not real inspection results">
-      <FlaskConical className="size-3" aria-hidden />
-      {label}
-    </span>
-  );
-}
-
 export function OriginBadge({ origin }: { origin: 'ai' | 'simulated' }) {
   return origin === 'ai' ? (
     <span className="chip text-steel-bright border-steel/40 bg-steel/10 uppercase tracking-wider" title="Produced by a loaded YOLO model — still a potential defect pending human review">AI prediction</span>
@@ -107,10 +98,19 @@ export function StatusDot({ status, pulse }: { status: ComponentStatus['status']
   return <span className={cx('inline-block size-2 rounded-full shrink-0', STATUS_DOT[status], pulse && status === 'online' && 'pulse-dot')} aria-hidden />;
 }
 
-export function StatTile({ label, value, sub, icon, tone = 'default', to, onClick }: {
-  label: string; value: ReactNode; sub?: ReactNode; icon?: ReactNode; tone?: 'default' | 'crit' | 'warn' | 'ok' | 'steel'; to?: string; onClick?: () => void;
+export function StatTile({ label, value, sub, icon, tone = 'default', surface = 'content', to, onClick }: {
+  label: string; value: ReactNode; sub?: ReactNode; icon?: ReactNode; tone?: 'default' | 'crit' | 'warn' | 'ok' | 'steel';
+  /** content = white card · dark = #092635 · secondary = #5C839E · highlight = #FCF4DB */
+  surface?: 'content' | 'dark' | 'secondary' | 'highlight';
+  to?: string; onClick?: () => void;
 }) {
   const accent = { default: 'before:bg-line-strong', crit: 'before:bg-crimson', warn: 'before:bg-warn', ok: 'before:bg-ok', steel: 'before:bg-steel' }[tone];
+  const skin = {
+    content: { box: '', label: '', value: 'text-ink', sub: 'text-muted', icon: 'text-faint' },
+    dark: { box: '!bg-navy !border-navy', label: '!text-[#9fc0d6]', value: 'text-cream', sub: 'text-[#c9d6df]', icon: 'text-[#9fc0d6]' },
+    secondary: { box: '!bg-steel !border-steel', label: '!text-white/85', value: 'text-white', sub: 'text-white', icon: 'text-white/80' },
+    highlight: { box: '!bg-cream !border-[#efe2b8]', label: '!text-[#6b5a2a]', value: 'text-ink', sub: 'text-[#5a4c24]', icon: 'text-[#8a7638]' },
+  }[surface];
   const Comp = onClick ? 'button' : 'div';
   return (
     <Comp
@@ -118,16 +118,17 @@ export function StatTile({ label, value, sub, icon, tone = 'default', to, onClic
       data-to={to}
       className={cx(
         'panel relative overflow-hidden text-left px-4 py-3.5 before:absolute before:left-0 before:top-3 before:bottom-3 before:w-[3px] before:rounded-r',
-        accent,
-        onClick && 'hover:border-line-strong transition-colors cursor-pointer',
+        surface === 'content' ? accent : 'before:hidden',
+        skin.box,
+        onClick && 'hover:border-line-strong hover:brightness-[1.03] transition-[border-color,filter] cursor-pointer',
       )}
     >
       <div className="flex items-center justify-between gap-2">
-        <span className="eyebrow">{label}</span>
-        <span className="text-faint">{icon}</span>
+        <span className={cx('eyebrow', skin.label)}>{label}</span>
+        <span className={skin.icon}>{icon}</span>
       </div>
-      <div className="mt-1.5 text-2xl font-semibold font-display text-ink num leading-tight">{value}</div>
-      {sub && <div className="text-xs text-muted mt-0.5 truncate">{sub}</div>}
+      <div className={cx('mt-1.5 text-2xl font-semibold font-display num leading-tight', skin.value)}>{value}</div>
+      {sub && <div className={cx('text-xs mt-0.5 truncate', skin.sub)}>{sub}</div>}
     </Comp>
   );
 }

@@ -11,7 +11,7 @@ export function EvidenceImage({ url, bbox, category, confidence, className, show
 }) {
   const [failed, setFailed] = useState(false);
   const src = mediaUrl(url);
-  const color = category ? CATEGORY_COLOR[category] : '#669bbc';
+  const color = category ? CATEGORY_COLOR[category] : '#5c839e';
   if (!src || failed) {
     return (
       <div className={cx('grid place-items-center bg-surface-2 text-faint aspect-video rounded-md', className)}>
