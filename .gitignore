@@ -23,3 +23,16 @@ __pycache__/
 *.pyc
 **/.env
 .env
+
+# v1.1 training / runtime artefacts
+data_prep/raw/
+data_prep/merged/
+runs/
+*.pt
+!backend/models/.gitkeep
+backend/aerospectra.backup-*.db
+results/test_clip.mp4
+*.log
+yolo11*.pt
+dist/
+

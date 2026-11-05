@@ -100,6 +100,8 @@ export function SimulationViewport({ mission, snap, opts, captureRef, className,
       {gl ? (
         <SceneBoundary>
           <SimulationScene mission={mission} opts={opts} captureRef={captureRef} onAircraftSource={setAircraftSrc} />
+          {/* slight cinematic vignette (pure CSS overlay — does not affect captures or the PIP render) */}
+          <div aria-hidden className="pointer-events-none absolute inset-0" style={{ background: 'radial-gradient(ellipse at center, rgba(0,0,0,0) 55%, rgba(0,0,0,.38) 100%)' }} />
         </SceneBoundary>
       ) : (
         <div className="absolute inset-0 grid place-items-center text-sm text-muted">WebGL is not available in this browser.</div>

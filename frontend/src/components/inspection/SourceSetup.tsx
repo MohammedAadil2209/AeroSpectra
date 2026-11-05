@@ -43,10 +43,31 @@ export function CameraSetup({ uri, onUri, disabled, backendOnline }: { uri: stri
           {testing ? <Loader2 className="size-4 animate-spin" /> : <PlugZap className="size-4" />} Test
         </button>
       </div>
+      <div className="flex flex-wrap gap-1.5">
+        {[
+          { label: 'Drone RTSP', v: 'rtsp://192.168.1.1:7070/webcam' },
+          { label: 'Webcam 0', v: '0' },
+          { label: 'OBS Virtual Cam 1', v: '1' },
+        ].map((p) => (
+          <button
+            key={p.v}
+            type="button"
+            disabled={disabled}
+            className={cx('btn btn-sm', uri === p.v && 'border-steel text-ink')}
+            onClick={() => {
+              onUri(p.v);
+              localStorage.setItem(CAMERA_URI_KEY, p.v);
+              setResult(null);
+            }}
+          >
+            {p.label}
+          </button>
+        ))}
+      </div>
       {result && <div className={cx('text-xs', result.ok ? 'text-ok' : 'text-crit')}>{result.message}</div>}
       <p className="text-[11px] text-faint leading-snug">
-        Device index (e.g. <span className="num">0</span>) or a stream URL that you have verified. The Elilvendan B2 / WiFi UFO stream protocol is not yet verified — a practical bridge is
-        Android screen-mirroring (scrcpy) → OBS Virtual Camera → device index.
+        Device index (e.g. <span className="num">0</span>) or stream URL. RTSP is tried over UDP first with automatic TCP fallback; the newest frame is always processed (no lag build-up) and a
+        dropped link reconnects without ending the session. Alternative bridge: Android screen-mirroring (scrcpy) → OBS Virtual Camera → device index.
       </p>
     </div>
   );

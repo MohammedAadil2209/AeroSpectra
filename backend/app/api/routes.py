@@ -33,6 +33,7 @@ from app.schemas.api import (
 )
 from app.services.inspection_runner import InspectionConflict, runner
 from app.video.sources import VideoSourceError, probe_video, test_camera
+from app.services.events import kpi, publish
 from app.websocket.manager import ws_manager
 
 router = APIRouter(prefix="/api")
@@ -63,14 +64,17 @@ def health(db: Session = Depends(get_db)):
     models.load()
     snap = runner.snapshot()
     camera = dict(_last_camera_test)
-    if snap and snap["source"] == "camera":
-        camera = {"status": "online", "detail": "Streaming from live camera."}
+    if snap and snap["source"] in ("camera", "drone_direct"):
+        live = snap.get("connected", True)
+        camera = {"status": "online" if live else "degraded",
+                  "detail": ("Streaming from the drone (direct Wi-Fi)." if snap["source"] == "drone_direct" else "Streaming from live camera.")
+                  if live else "Link lost - reconnecting..."}
     return {
         "status": "ok",
         "version": APP_VERSION,
         "time": datetime.utcnow(),
         "database": db_status,
-        "ai_model": {"status": models.status, "detail": models.detail},
+        "ai_model": {"status": models.status, "detail": models.detail, **models.info()},
         "camera": camera,
         "active_inspection_id": runner.active_id,
         "websocket_clients": len(ws_manager.clients),
@@ -148,7 +152,7 @@ def start_inspection(body: StartInspectionIn, db: Session = Depends(get_db)):
     except InspectionConflict as e:
         raise HTTPException(409, str(e))
     except (VideoSourceError, ValueError) as e:
-        if body.source == "camera":
+        if body.source in ("camera", "drone_direct"):
             _last_camera_test.update(status="offline", detail=str(e))
         raise HTTPException(400, str(e))
     insp = repo.get_inspection(db, iid)
@@ -211,7 +215,7 @@ def get_inspection(inspection_id: str, db: Session = Depends(get_db)):
         raise HTTPException(404, "Inspection not found")
     data = _inspection_out(db, insp, len(insp.detections))
     data["aircraft"] = repo.aircraft_summary(db, insp.aircraft)
-    data["detections"] = [DetectionOut.model_validate(d).model_dump() for d in insp.detections]
+    data["detections"] = [repo.detection_payload(d) for d in insp.detections]
     return data
 
 
@@ -231,10 +235,11 @@ def list_detections(
     db: Session = Depends(get_db),
 ):
     to_dt = lambda d: datetime(d.year, d.month, d.day) if d else None  # noqa: E731
-    return repo.list_detections(
+    rows = repo.list_detections(
         db, _is_demo(scope), category, review_status, aircraft_id, inspection_id,
         min_confidence, max_confidence, to_dt(date_from), to_dt(date_to), q,
     )
+    return [repo.detection_payload(d) for d in rows]
 
 
 @router.get("/detections/{detection_id}", response_model=DetectionOut)
@@ -242,17 +247,19 @@ def get_detection(detection_id: str, db: Session = Depends(get_db)):
     d = repo.get_detection(db, detection_id)
     if not d:
         raise HTTPException(404, "Detection not found")
-    return d
+    return repo.detection_payload(d)
 
 
 @router.patch("/detections/{detection_id}/review", response_model=DetectionOut)
 def review_detection(detection_id: str, body: ReviewIn, db: Session = Depends(get_db)):
-    d = repo.review_detection(db, detection_id, body.review_status, body.reviewer, body.reviewer_notes)
+    d = repo.review_detection(db, detection_id, body.review_status, body.reviewer, body.reviewer_notes, body.category)
     if not d:
         raise HTTPException(404, "Detection not found")
     db.commit()
-    out = DetectionOut.model_validate(d).model_dump()
-    ws_manager.emit("detection_reviewed", {"detection": out})
+    out = repo.detection_payload(d)
+    publish("defect.updated", {"detection": out})
+    publish("maintenance.updated", {"detection": out, "event": None})
+    kpi.touch(d.is_demo)
     return out
 
 

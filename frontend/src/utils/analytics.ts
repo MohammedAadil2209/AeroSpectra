@@ -3,7 +3,7 @@ import { parseDate } from './format';
 
 /** Same computation as backend repository.analytics — used for the offline demo dataset. */
 export function computeAnalytics(scope: DataScope, inspections: Inspection[], detections: Detection[]): Analytics {
-  const by_category: Record<Category, number> = { crack: 0, dent: 0, corrosion: 0 };
+  const by_category: Record<Category, number> = { crack: 0, dent: 0, corrosion: 0, defect: 0 };
   const by_status: Record<ReviewStatus, number> = { pending: 0, reviewed: 0, confirmed: 0, false_positive: 0 };
   const by_section: Record<string, number> = {};
   const hist = new Array(10).fill(0);
@@ -13,10 +13,10 @@ export function computeAnalytics(scope: DataScope, inspections: Inspection[], de
     by_section[d.section] = (by_section[d.section] ?? 0) + 1;
     hist[Math.min(9, Math.floor(d.confidence * 10))]++;
   }
-  const trend = new Map<string, { inspections: number; crack: number; dent: number; corrosion: number }>();
+  const trend = new Map<string, { inspections: number; crack: number; dent: number; corrosion: number; defect: number }>();
   const bucket = (s: string) => {
     const key = (parseDate(s) ?? new Date()).toISOString().slice(0, 10);
-    if (!trend.has(key)) trend.set(key, { inspections: 0, crack: 0, dent: 0, corrosion: 0 });
+    if (!trend.has(key)) trend.set(key, { inspections: 0, crack: 0, dent: 0, corrosion: 0, defect: 0 });
     return trend.get(key)!;
   };
   inspections.forEach((i) => bucket(i.started_at).inspections++);

@@ -14,6 +14,7 @@ import type { MissionController } from '@/services/simulationService';
 import { ProceduralAircraft } from './ProceduralAircraft';
 import { ProceduralDrone } from './ProceduralDrone';
 import { HangarEnvironment } from './HangarEnvironment';
+import { DefectMarkers, type MarkerDefect } from './DefectMarkers';
 import { AircraftModel, GltfDrone, ModelErrorBoundary, useModelAvailable, type ModelSource } from './ModelAssets';
 import { MODELS, SECTION_RANGES } from './simulationConfig';
 
@@ -30,6 +31,11 @@ export interface SceneOptions {
   showPip: boolean;
   fov: number;
   lowPower?: boolean;
+  /** Low / High render quality (reflections, contact shadows, dust). Defaults from lowPower. */
+  quality?: 'low' | 'high';
+  /** Stored defects of the selected aircraft (shown once their section has been seen by the drone camera). */
+  defects?: MarkerDefect[];
+  visibleSections?: string[];
 }
 
 /** PIP geometry in CSS px — shared with the HTML overlay so they line up exactly. */
@@ -184,9 +190,9 @@ function FlightPath({ mission, visible, labels }: { mission: MissionController; 
 
 // ------------------------------------------------------------------ cameras + rendering
 const PRESETS: Record<Exclude<ViewMode, 'follow' | 'drone'>, { pos: [number, number, number]; target: [number, number, number] }> = {
-  free: { pos: [34, 24, -40], target: [0, 3, 0] },
+  free: { pos: [30, 15, -36], target: [0, 3, 0] },
   top: { pos: [0, 82, 0.01], target: [0, 0, 0] },
-  side: { pos: [2, 9, -54], target: [0, 4, 0] },
+  side: { pos: [2, 8, -42], target: [0, 4, 0] },
 };
 
 function CameraDirector({ mission, view, controls }: { mission: MissionController; view: ViewMode; controls: MutableRefObject<OrbitControlsImpl | null> }) {
@@ -314,17 +320,19 @@ export function SimulationScene({ mission, opts, captureRef, onAircraftSource }:
   return (
     <Canvas
       shadows
-      dpr={opts.lowPower ? [1, 1.25] : [1, 1.75]}
+      dpr={opts.lowPower || opts.quality === 'low' ? [1, 1.25] : [1, 1.5]}
       gl={{ preserveDrawingBuffer: true, antialias: true, powerPreference: 'high-performance' }}
       camera={{ fov: 42, position: PRESETS.free.pos, near: 0.1, far: 500 }}
       onCreated={({ gl }) => {
         gl.toneMapping = THREE.ACESFilmicToneMapping;
-        gl.toneMappingExposure = 1.05;
+        gl.toneMappingExposure = 1.0;
       }}
     >
-      <color attach="background" args={['#071e2a']} />
-      <fog attach="fog" args={['#071e2a', 70, 190]} />
-      <HangarEnvironment lowPower={opts.lowPower} hideRoof={opts.view === 'top'} />
+      <color attach="background" args={['#1d252a']} />
+      {/* light hangar haze */}
+      <fog attach="fog" args={['#6f7b82', 55, 230]} />
+      <HangarEnvironment lowPower={opts.lowPower} quality={opts.quality} hideRoof={opts.view === 'top'} />
+      {opts.defects && opts.defects.length > 0 && <DefectMarkers defects={opts.defects} visibleSections={opts.visibleSections ?? []} />}
       <AircraftModel procedural={<ProceduralAircraft />} onSource={onAircraftSource} />
       <DroneRig mission={mission} droneCam={droneCam} fov={opts.fov} />
       <FlightPath mission={mission} visible={opts.showPath} labels={opts.showLabels && opts.view !== 'drone'} />

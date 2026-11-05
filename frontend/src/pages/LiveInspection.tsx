@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Boxes, Camera, CircleDot, FileText, Pause, Play, Square, Upload, Video } from 'lucide-react';
+import { Boxes, Camera, CircleDot, FileText, Pause, Play, Plane, Square, Upload, Video } from 'lucide-react';
 import type { Aircraft, SourceType, UploadInfo } from '@/types';
 import { useApp } from '@/context/AppContext';
 import { aircraftService, inspectionService } from '@/services/dataService';
@@ -9,25 +9,29 @@ import { inspectionSocket } from '@/services/wsClient';
 import { useMission } from '@/hooks/useMission';
 import { VideoStage } from '@/components/inspection/VideoStage';
 import { DetectionPanel } from '@/components/inspection/DetectionPanel';
+import { ConfidenceSlider, LiveAIRecord } from '@/components/inspection/LiveAIRecord';
 import { CAMERA_URI_KEY, CameraSetup, UploadSetup } from '@/components/inspection/SourceSetup';
+import { DRONE_IP_KEY, DroneSetup } from '@/components/inspection/DroneSetup';
 import { SimulationViewport } from '@/components/simulation/SimulationViewport';
 import { MissionButtons, SectionChecklist, TelemetryGrid } from '@/components/simulation/MissionPanels';
 import { Banner, KeyValue, PageHeader, Panel, Segmented, cx } from '@/components/ui/primitives';
 import { DETECTION_MODE_LABEL, SECTIONS, SOURCE_LABEL } from '@/utils/labels';
 
 const SOURCE_OPTS: { value: SourceType; label: React.ReactNode }[] = [
-  { value: 'camera', label: <><Camera className="size-3.5" /> Live Camera</> },
+  { value: 'drone_direct', label: <><Plane className="size-3.5" /> Drone</> },
+  { value: 'camera', label: <><Camera className="size-3.5" /> Camera</> },
   { value: 'simulation', label: <><Boxes className="size-3.5" /> Simulation</> },
-  { value: 'upload', label: <><Upload className="size-3.5" /> Uploaded Video</> },
+  { value: 'upload', label: <><Upload className="size-3.5" /> Video file</> },
 ];
 
 export default function LiveInspection() {
   const [params, setParams] = useSearchParams();
-  const { backendOnline, active, setActive, liveDetections, clearLiveDetections, notify, healthChecked, health } = useApp();
-  const [source, setSourceState] = useState<SourceType>((params.get('source') as SourceType) || 'simulation');
+  const { backendOnline, active, setActive, liveDetections, clearLiveDetections, notify, healthChecked, health, ai, presentMode } = useApp();
+  const [source, setSourceState] = useState<SourceType>((params.get('source') as SourceType) || 'drone_direct');
   const [aircraft, setAircraft] = useState<Aircraft[]>([]);
   const [aircraftId, setAircraftId] = useState(params.get('aircraft') ?? '');
-  const [cameraUri, setCameraUri] = useState(() => localStorage.getItem(CAMERA_URI_KEY) ?? '0');
+  const [cameraUri, setCameraUri] = useState(() => localStorage.getItem(CAMERA_URI_KEY) ?? 'rtsp://192.168.1.1:7070/webcam');
+  const [droneIp, setDroneIp] = useState(() => localStorage.getItem(DRONE_IP_KEY) ?? '');
   const [upload, setUpload] = useState<UploadInfo | null>(null);
   const [localFile, setLocalFile] = useState<File | null>(null);
   const [record, setRecord] = useState(false);
@@ -124,7 +128,7 @@ export default function LiveInspection() {
       const insp = await inspectionService.start({
         aircraft_id: aircraftId,
         source,
-        camera_uri: source === 'camera' ? cameraUri.trim() : undefined,
+        camera_uri: source === 'camera' ? cameraUri.trim() : source === 'drone_direct' ? droneIp.trim() || 'auto' : undefined,
         upload_id: source === 'upload' ? upload?.upload_id : undefined,
         record,
       });
@@ -222,7 +226,7 @@ export default function LiveInspection() {
         </div>
       )}
 
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_380px]">
+      <div className={cx('grid gap-4', presentMode ? 'xl:grid-cols-[minmax(0,1fr)_520px]' : 'xl:grid-cols-[minmax(0,1fr)_400px]')}>
         <div className="space-y-4 min-w-0">
           <VideoStage
             streamUrl={streamUrl}
@@ -241,7 +245,9 @@ export default function LiveInspection() {
                 <div className="text-sm text-muted mt-1">
                   {localOnly
                     ? 'The synthetic video feed and detections need the backend. Follow the drone in the 3D mission view below.'
-                    : effSource === 'camera'
+                    : effSource === 'drone_direct'
+                      ? 'Connect the laptop Wi-Fi to the drone, press Test drone, then Start Inspection. The video heartbeat starts automatically.'
+                      : effSource === 'camera'
                       ? 'Configure the camera source and press Start Inspection.'
                       : effSource === 'upload'
                         ? 'Upload a drone video, then press Start Inspection to process it.'
@@ -252,7 +258,7 @@ export default function LiveInspection() {
           />
 
           {/* control bar */}
-          <div className="panel p-3 flex flex-wrap items-center gap-2">
+          <div className={cx('panel p-3 flex flex-wrap items-center gap-2', presentMode && 'dev-only')}>
             {!running ? (
               <button className="btn btn-primary" onClick={start} disabled={!canStart}>
                 <Play className="size-4" /> Start Inspection
@@ -289,7 +295,7 @@ export default function LiveInspection() {
           {showSim && (
             <Panel title="Autonomous drone mission · 3D simulation" bodyClass="p-0" actions={<Link to="/simulation" className="btn btn-ghost btn-sm">Open full simulator</Link>}>
               <div className="grid lg:grid-cols-[minmax(0,1fr)_300px]">
-                <SimulationViewport mission={m.mission} snap={m.snap} opts={{ view: 'free', showPath: true, showLabels: false, showPip: true, fov: 50, lowPower: true }} className="h-[340px]" />
+                <SimulationViewport mission={m.mission} snap={m.snap} opts={{ view: 'free', showPath: true, showLabels: false, showPip: true, fov: 50, lowPower: true, quality: 'low', defects: sessionDetections.map((d) => ({ id: d.id, section: d.section, risk_level: d.risk_level })), visibleSections: m.snap.sectionsVisited }} className={presentMode ? 'h-[460px]' : 'h-[340px]'} />
                 <div className="p-4 space-y-4 border-t lg:border-t-0 lg:border-l border-line">
                   {!running && <MissionButtons compact snap={m.snap} onStart={m.start} onPause={m.pause} onResume={m.resume} onReset={m.reset} />}
                   <TelemetryGrid snap={m.snap} />
@@ -302,7 +308,8 @@ export default function LiveInspection() {
 
         {/* right column */}
         <div className="space-y-4">
-          <Panel title={running ? 'Session' : 'Inspection setup'}>
+          <LiveAIRecord detections={sessionDetections} big={presentMode} />
+          <Panel title={running ? 'Session' : 'Inspection setup'} className="dev-only">
             <div className="space-y-4">
               <div>
                 <div className="label">Video source</div>
@@ -324,6 +331,7 @@ export default function LiveInspection() {
                   </div>
                 )}
               </div>
+              {effSource === 'drone_direct' && <DroneSetup ip={droneIp} onIp={setDroneIp} disabled={running} backendOnline={backendOnline} active={active} />}
               {effSource === 'camera' && <CameraSetup uri={cameraUri} onUri={setCameraUri} disabled={running} backendOnline={backendOnline} />}
               {effSource === 'upload' && <UploadSetup info={upload} onInfo={setUpload} onLocalFile={setLocalFile} disabled={running} backendOnline={backendOnline} />}
               {effSource === 'simulation' && (
@@ -347,16 +355,20 @@ export default function LiveInspection() {
                   </select>
                 </div>
               )}
-              <div className="border-t border-line pt-3">
+              <div className="border-t border-line pt-3 space-y-1">
+                <ConfidenceSlider />
                 <KeyValue k="Backend" v={backendOnline ? 'Connected' : 'Offline'} />
-                <KeyValue k="AI model" v={health?.ai_model.status === 'online' ? 'Loaded' : 'Not loaded'} />
+                <KeyValue k="AI model" v={health?.ai_model.status === 'online' ? `${ai?.model ?? 'Loaded'}` : 'Not loaded'} />
+                <KeyValue k="AI device" v={ai?.device ? `${ai.device}${ai.half ? ' · FP16' : ''}` : '—'} />
+                <KeyValue k="Inference" v={ai?.inference_fps ? `${ai.inference_fps.toFixed(1)} inf/s · ${ai.inference_ms ?? 0} ms` : '—'} mono />
+                {(active?.source === 'camera' || active?.source === 'drone_direct') && <KeyValue k={active.source === 'drone_direct' ? 'Drone link' : 'Camera link'} v={active.connected === false ? 'Reconnecting…' : `Connected${active.reconnects ? ` (${active.reconnects} reconnects)` : ''}`} />}
                 <KeyValue k="Detection" v={active ? DETECTION_MODE_LABEL[active.detection_mode] : effSource === 'simulation' ? DETECTION_MODE_LABEL.simulated : health?.ai_model.status === 'online' ? DETECTION_MODE_LABEL.ai : DETECTION_MODE_LABEL.none} />
                 {active && <KeyValue k="Section" v={active.section} />}
               </div>
             </div>
           </Panel>
 
-          <Panel title="Detections" bodyClass="p-0" className="xl:sticky xl:top-20" actions={<span className="text-xs text-muted">potential defects · human review required</span>}>
+          <Panel title="Detections" bodyClass="p-0" className="xl:sticky xl:top-20 dev-only" actions={<span className="text-xs text-muted">potential defects · human review required</span>}>
             <div className="pt-3 max-h-[70vh] flex flex-col">
               <DetectionPanel detections={sessionDetections} mode={active?.detection_mode ?? null} scope={scope} running={!!active && active.status === 'active'} />
             </div>

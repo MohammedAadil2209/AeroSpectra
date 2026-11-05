@@ -82,4 +82,68 @@ class Detection(Base):
     reviewed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     is_demo: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
 
+    # --- v1.1: risk engine (0-100 + level + per-factor breakdown). ADVISORY only.
+    risk_score: Mapped[float] = mapped_column(Float, default=0.0)
+    risk_level: Mapped[str] = mapped_column(String(10), default="low", index=True)  # low|medium|high|critical
+    risk_breakdown: Mapped[dict] = mapped_column(JSON, default=dict)
+    # --- v1.1: cost estimate (currency per cost settings)
+    cost_min: Mapped[float] = mapped_column(Float, default=0.0)
+    cost_max: Mapped[float] = mapped_column(Float, default=0.0)
+    labour_hours: Mapped[float] = mapped_column(Float, default=0.0)
+    # --- v1.1: maintenance lifecycle
+    # detected|confirmed|work_order|repair_in_progress|repaired|cleared|false_positive|deferred
+    maintenance_status: Mapped[str] = mapped_column(String(24), default="detected", index=True)
+    actual_cost: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    actual_labour_hours: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    repair_photo_url: Mapped[Optional[str]] = mapped_column(String(256), nullable=True)
+    cleared_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    cleared_by: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    # category as reported by the model, before a reviewer re-classified it
+    original_category: Mapped[Optional[str]] = mapped_column(String(16), nullable=True)
+    thumb_url: Mapped[Optional[str]] = mapped_column(String(256), nullable=True)
+
     inspection: Mapped[Inspection] = relationship(back_populates="detections")
+
+
+class MaintenanceEvent(Base):
+    """One lifecycle transition of a defect (who / when / notes / actuals / photo)."""
+
+    __tablename__ = "maintenance_events"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True)
+    detection_id: Mapped[str] = mapped_column(ForeignKey("detections.id"), index=True)
+    aircraft_id: Mapped[str] = mapped_column(String(32), index=True)
+    from_status: Mapped[str] = mapped_column(String(24))
+    to_status: Mapped[str] = mapped_column(String(24))
+    actor: Mapped[str] = mapped_column(String(64), default="")
+    at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
+    notes: Mapped[str] = mapped_column(Text, default="")
+    reason: Mapped[str] = mapped_column(Text, default="")
+    actual_cost: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    actual_labour_hours: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    photo_url: Mapped[Optional[str]] = mapped_column(String(256), nullable=True)
+    is_demo: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
+
+
+class AppSetting(Base):
+    """Versioned JSON settings (risk engine weights, cost assumptions)."""
+
+    __tablename__ = "app_settings"
+
+    key: Mapped[str] = mapped_column(String(32), primary_key=True)
+    value: Mapped[dict] = mapped_column(JSON)
+    version: Mapped[int] = mapped_column(Integer, default=1)
+    updated_by: Mapped[str] = mapped_column(String(64), default="system")
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class SettingAudit(Base):
+    __tablename__ = "setting_audit"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    key: Mapped[str] = mapped_column(String(32), index=True)
+    version: Mapped[int] = mapped_column(Integer)
+    changed_by: Mapped[str] = mapped_column(String(64), default="")
+    changed_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    changes: Mapped[dict] = mapped_column(JSON, default=dict)  # {path: [old, new]}
+    note: Mapped[str] = mapped_column(Text, default="")

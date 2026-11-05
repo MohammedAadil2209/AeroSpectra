@@ -48,9 +48,9 @@ export function AircraftHero({ detections, fleet, children }: { detections: Dete
     [detections, aircraft],
   );
   const rows = useMemo(() => {
-    const m = new Map<string, Row>(SECTIONS.map((s) => [s, { section: s, total: 0, pending: 0, high: 0, crack: 0, dent: 0, corrosion: 0 }]));
+    const m = new Map<string, Row>(SECTIONS.map((s) => [s, { section: s, total: 0, pending: 0, high: 0, crack: 0, dent: 0, corrosion: 0, defect: 0 }]));
     for (const d of shown) {
-      const r = m.get(d.section) ?? { section: d.section, total: 0, pending: 0, high: 0, crack: 0, dent: 0, corrosion: 0 };
+      const r = m.get(d.section) ?? { section: d.section, total: 0, pending: 0, high: 0, crack: 0, dent: 0, corrosion: 0, defect: 0 };
       r.total++; r[d.category]++;
       if (d.review_status === 'pending') r.pending++;
       if (d.priority === 'high') r.high++;

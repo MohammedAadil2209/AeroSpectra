@@ -9,6 +9,7 @@ export const DEFECT_MAP_COLOR: Record<Category, string> = {
   crack: '#c0394f', // red wine
   corrosion: '#4a78b5', // navy blue
   dent: '#a9bccd', // grey blue
+  defect: '#41c9b0', // teal (generic AI defect)
 };
 
 /**
@@ -19,4 +20,5 @@ export const DEFECT_CHART_COLOR: Record<Category, string> = {
   crack: '#8e1f33', // red wine
   corrosion: '#1f3f66', // navy blue
   dent: '#7f97ad', // grey blue
+  defect: '#1f8f7c', // teal (generic AI defect)
 };

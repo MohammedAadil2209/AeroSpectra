@@ -47,6 +47,22 @@ export function fmtDuration(totalSeconds: number): string {
   return `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, '0')} min`;
 }
 
+/** Money in the configured currency (INR default, Indian digit grouping). */
+export function fmtMoney(v: number | null | undefined, currency = 'INR', compact = false): string {
+  if (v === null || v === undefined || Number.isNaN(v)) return '\u2014';
+  try {
+    return new Intl.NumberFormat(currency === 'INR' ? 'en-IN' : 'en-US', {
+      style: 'currency', currency, maximumFractionDigits: 0, notation: compact ? 'compact' : 'standard',
+    }).format(v);
+  } catch {
+    return `${currency} ${Math.round(v).toLocaleString()}`;
+  }
+}
+export function fmtMoneyRange(lo?: number | null, hi?: number | null, currency = 'INR', compact = false): string {
+  if (!lo && !hi) return '\u2014';
+  return `${fmtMoney(lo ?? 0, currency, compact)} \u2013 ${fmtMoney(hi ?? 0, currency, compact)}`;
+}
+
 export const pct = (v: number, digits = 0) => `${(v * 100).toFixed(digits)}%`;
 
 export function fmtBytes(n: number): string {

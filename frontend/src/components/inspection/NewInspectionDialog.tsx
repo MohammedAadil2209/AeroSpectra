@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Boxes, Camera, Upload, X } from 'lucide-react';
+import { Boxes, Camera, Plane, Upload, X } from 'lucide-react';
 import type { Aircraft, SourceType } from '@/types';
 import { aircraftService } from '@/services/dataService';
 import { useApp } from '@/context/AppContext';
 import { cx } from '@/components/ui/primitives';
 
 const SOURCES: { value: SourceType; label: string; icon: typeof Camera; body: string }[] = [
+  { value: 'drone_direct', label: 'Drone (direct Wi-Fi)', icon: Plane, body: 'Elilvendan B2 / RC UFO drone: laptop joins the drone Wi-Fi, no phone needed.' },
   { value: 'simulation', label: 'Simulation', icon: Boxes, body: 'Synthetic footage + 3D drone mission.' },
   { value: 'upload', label: 'Uploaded Video', icon: Upload, body: 'Process a recorded drone video file.' },
   { value: 'camera', label: 'Live Camera', icon: Camera, body: 'Real camera feed via OpenCV (device index or verified stream URL).' },
@@ -59,7 +60,7 @@ export function NewInspectionDialog({ open, onClose }: { open: boolean; onClose:
         <div className="p-5 space-y-5">
           <div>
             <div className="label">1 · Video source</div>
-            <div className="grid sm:grid-cols-3 gap-2">
+            <div className="grid sm:grid-cols-2 gap-2">
               {SOURCES.map(({ value, label, icon: Icon, body }) => (
                 <button
                   key={value}

@@ -8,6 +8,8 @@ import {
   ClipboardCheck,
   Cpu,
   Database,
+  History,
+  PieChart,
   Plane,
   PlayCircle,
   Radio,
@@ -23,6 +25,7 @@ import { aircraftService, analyticsService, detectionService, inspectionService 
 import { ScopeNotice } from '@/components/layout/ScopeNotice';
 import { AircraftHero } from '@/components/layout/AircraftHero';
 import { CategoryDonut, DetectionTrendChart } from '@/components/analytics/Charts';
+import { LiveOpsPanel } from '@/components/analytics/LiveOpsPanel';
 import { DetectionTable } from '@/components/defects/DetectionTable';
 import { NewInspectionDialog } from '@/components/inspection/NewInspectionDialog';
 import {
@@ -36,19 +39,21 @@ import {
   SourceChip,
   StatTile,
   StatusDot,
+  cx,
 } from '@/components/ui/primitives';
 import { fmtDuration, fmtRelative } from '@/utils/format';
 import { DETECTION_MODE_LABEL } from '@/utils/labels';
 
 export default function Dashboard() {
-  const { scope, dataVersion, health, backendOnline, active, wsState } = useApp();
+  const { scope, dataVersion, health, backendOnline, active, wsState, kpi } = useApp();
   const navigate = useNavigate();
   const [dialog, setDialog] = useState(false);
   const an = useAsync(() => analyticsService.get(scope), [scope, dataVersion, backendOnline]);
   const recent = useAsync(() => detectionService.list(scope), [scope, dataVersion, backendOnline]);
   const insp = useAsync(() => inspectionService.list(scope), [scope, dataVersion, backendOnline]);
   const fleet = useAsync(() => aircraftService.list(scope), [scope, dataVersion, backendOnline]);
-  const a = an.data;
+  // live KPIs pushed by the server win over the last fetch
+  const a = kpi[scope] ?? an.data;
 
   const camStatus = health?.camera.status ?? 'offline';
   const aiStatus = health?.ai_model.status ?? 'offline';
@@ -99,7 +104,7 @@ export default function Dashboard() {
           ) : (
             <>
               <StatTile label="Inspections" value={a.total_inspections} sub="inspection records" icon={<ClipboardCheck className="size-4" />} surface="dark" onClick={() => navigate('/inspections')} />
-              <StatTile label="Potential defects" value={a.total_detections} sub={`${a.by_category.crack} crack · ${a.by_category.dent} dent · ${a.by_category.corrosion} corr.`} icon={<ScanSearch className="size-4" />} tone="steel" surface="secondary" onClick={() => navigate('/defects')} />
+              <StatTile label="Potential defects" value={a.total_detections} sub={`${a.by_category.crack} crack · ${a.by_category.dent} dent · ${a.by_category.corrosion} corr.${a.by_category.defect ? ` · ${a.by_category.defect} defect` : ''}`} icon={<ScanSearch className="size-4" />} tone="steel" surface="secondary" onClick={() => navigate('/defects')} />
               <StatTile label="High-priority" value={a.high_priority} sub="AI-triaged, not certified" icon={<ShieldAlert className="size-4" />} tone="crit" onClick={() => navigate('/defects')} />
               <StatTile label="Pending review" value={a.pending_reviews} sub="awaiting human reviewer" icon={<TriangleAlert className="size-4" />} tone="warn" surface="highlight" onClick={() => navigate('/defects?status=pending')} />
               <StatTile label="Completed" value={a.completed_inspections} sub="inspection sessions" icon={<CheckCircle2 className="size-4" />} tone="ok" />
@@ -114,7 +119,7 @@ export default function Dashboard() {
               <StatTile
                 label="AI model"
                 value={<span className="flex items-center gap-2 text-base font-sans"><StatusDot status={aiStatus} />{aiStatus === 'online' ? 'Loaded' : 'Not loaded'}</span>}
-                sub={aiStatus === 'online' ? 'YOLO defect model' : 'no weights · sim mode only'}
+                sub={aiStatus === 'online' ? `${health?.ai_model.model ?? 'YOLO'} · ${health?.ai_model.device ?? ''}` : 'no weights · sim mode only'}
                 icon={<Cpu className="size-4" />}
                 onClick={() => navigate('/settings')}
               />
@@ -123,11 +128,13 @@ export default function Dashboard() {
         </div>
       )}
 
+      {a && <LiveOpsPanel a={a} />}
+
       <div className="grid gap-4 xl:grid-cols-3 mb-4">
-        <Panel className="xl:col-span-2" title="Detection trend" actions={<span className="text-xs text-muted">potential defects per day, by category</span>}>
+        <Panel className="xl:col-span-2" title="Detection trend" icon={<Activity className="text-steel" />} actions={<span className="text-xs text-muted">potential defects per day, by category</span>}>
           {a ? a.trend.length ? <DetectionTrendChart data={a.trend} /> : <EmptyState title="No detections yet" /> : <Skeleton className="h-[260px]" />}
         </Panel>
-        <Panel title="Defect distribution">
+        <Panel title="Defect distribution" icon={<PieChart className="text-steel" />}>
           {a ? <CategoryDonut byCategory={a.by_category} /> : <Skeleton className="h-[200px]" />}
         </Panel>
       </div>
@@ -136,6 +143,7 @@ export default function Dashboard() {
         <Panel
           className="xl:col-span-2"
           title="Recent detection records"
+          icon={<ScanSearch className="text-steel" />}
           bodyClass="p-0"
           actions={<Link to="/defects" className="btn btn-ghost btn-sm">View all <ArrowRight className="size-3.5" /></Link>}
         >
@@ -151,8 +159,8 @@ export default function Dashboard() {
         </Panel>
 
         <div className="space-y-4">
-          <Panel title="System status">
-            <ul className="space-y-2.5 text-sm">
+          <Panel title="System status" icon={<Server className="text-steel" />}>
+            <ul className="space-y-0.5 text-sm">
               <SysRow icon={<Server className="size-4" />} label="Backend API" status={backendOnline ? 'online' : 'offline'} detail={backendOnline ? `v${health?.version}` : 'not reachable'} />
               <SysRow icon={<Database className="size-4" />} label="Database" status={health?.database.status ?? 'offline'} detail={health?.database.detail ?? '—'} />
               <SysRow icon={<Radio className="size-4" />} label="Live link (WebSocket)" status={wsState === 'open' ? 'online' : 'offline'} detail={wsState} />
@@ -160,7 +168,7 @@ export default function Dashboard() {
               <SysRow icon={<Video className="size-4" />} label="Drone camera" status={camStatus} detail={STATUS_TEXT[camStatus]} />
             </ul>
           </Panel>
-          <Panel title="Recent inspection activity" bodyClass="p-0">
+          <Panel title="Recent inspection activity" icon={<History className="text-steel" />} bodyClass="p-0">
             {insp.data?.length ? (
               <ul className="divide-y divide-line">
                 {insp.data.slice(0, 5).map((i) => (
@@ -218,13 +226,24 @@ export default function Dashboard() {
   );
 }
 
+const SYS_CHIP: Record<string, string> = {
+  online: 'text-ok-ink border-ok/35 bg-ok/10',
+  degraded: 'text-warn-ink border-warn/40 bg-warn/10',
+  connecting: 'text-warn-ink border-warn/40 bg-warn/10',
+  unavailable: 'text-warn-ink border-warn/40 bg-warn/10',
+  not_configured: 'text-muted border-line bg-surface-2',
+  offline: 'text-crit-ink border-crit/35 bg-crit/10',
+};
+
 function SysRow({ icon, label, status, detail }: { icon: React.ReactNode; label: string; status: Parameters<typeof StatusDot>[0]['status']; detail: string }) {
   return (
-    <li className="flex items-center gap-3">
-      <span className="text-muted">{icon}</span>
-      <span className="text-ink-2 flex-1">{label}</span>
-      <span className="text-xs text-muted truncate max-w-[120px]">{detail}</span>
-      <StatusDot status={status} pulse />
+    <li className="-mx-2 flex items-center gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-surface-2/70">
+      <span className="grid size-8 shrink-0 place-items-center rounded-lg border border-line bg-surface-2 text-steel">{icon}</span>
+      <div className="min-w-0 flex-1">
+        <div className="text-[13px] text-ink leading-tight">{label}</div>
+        <div className="text-[11px] text-muted truncate mt-0.5">{detail}</div>
+      </div>
+      <span className={cx('chip !h-[20px] !px-1.5 !text-[9.5px] uppercase tracking-[0.06em]', SYS_CHIP[status] ?? SYS_CHIP.not_configured)}>{STATUS_TEXT[status]}</span>
     </li>
   );
 }

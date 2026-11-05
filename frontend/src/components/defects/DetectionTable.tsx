@@ -1,7 +1,8 @@
 import type { Detection } from '@/types';
-import { CategoryChip, OriginBadge, PriorityChip, ReviewChip, cx } from '@/components/ui/primitives';
+import { CategoryChip, OriginBadge, ReviewChip, cx } from '@/components/ui/primitives';
 import { EvidenceImage } from '@/components/ui/EvidenceImage';
 import { fmtClock, fmtDateTime, pct } from '@/utils/format';
+import { CostRange, MaintenanceChip, RiskBadge } from '@/components/risk/RiskBits';
 
 export function ConfidenceBar({ value }: { value: number }) {
   return (
@@ -27,11 +28,13 @@ export function DetectionTable({ rows, onOpen, compact, showAircraft = true, sel
             {showAircraft && <th>Aircraft</th>}
             <th>Category</th>
             <th>Confidence</th>
-            {!compact && <th>Priority</th>}
+            <th>Risk</th>
+            {!compact && <th>Est. cost</th>}
             <th>Detected</th>
             {!compact && <th>Session</th>}
             {!compact && <th>Section</th>}
             <th>Review</th>
+            {!compact && <th>Maintenance</th>}
           </tr>
         </thead>
         <tbody>
@@ -54,7 +57,8 @@ export function DetectionTable({ rows, onOpen, compact, showAircraft = true, sel
               {showAircraft && <td className="num text-xs">{d.aircraft_id}</td>}
               <td><CategoryChip category={d.category} /></td>
               <td><ConfidenceBar value={d.confidence} /></td>
-              {!compact && <td><PriorityChip priority={d.priority} /></td>}
+              <td><RiskBadge level={d.risk_level} score={d.risk_score} /></td>
+              {!compact && <td className="text-xs whitespace-nowrap"><CostRange d={d} compact /></td>}
               <td className="text-xs whitespace-nowrap">
                 {fmtDateTime(d.detected_at)}
                 <div className="num text-faint">video {fmtClock(d.video_time_s)}</div>
@@ -62,6 +66,7 @@ export function DetectionTable({ rows, onOpen, compact, showAircraft = true, sel
               {!compact && <td className="num text-xs">{d.inspection_id}</td>}
               {!compact && <td className="text-xs">{d.section}</td>}
               <td><ReviewChip status={d.review_status} /></td>
+              {!compact && <td><MaintenanceChip status={d.maintenance_status} /></td>}
             </tr>
           ))}
         </tbody>

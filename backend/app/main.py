@@ -14,9 +14,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app.api.routes import router
+from app.api.routes_v2 import router as router_v2
 from app.config import APP_VERSION, CORS_ORIGINS, EVIDENCE_DIR, RECORDING_DIR
 from app.database import repository as repo
-from app.database.seed import seed_demo
+from app.database.seed import seed_demo, seed_demo_maintenance
 from app.database.session import init_db, session_scope
 from app.detection.detectors import models
 from app.services.inspection_runner import runner
@@ -31,6 +32,10 @@ async def lifespan(app: FastAPI):
     seed_demo()
     with session_scope() as db:
         repo.mark_orphaned_inspections(db)
+        repo.sync_maintenance_from_review(db)
+        res = repo.rescore_all(db)
+        logging.getLogger("aerospectra").info("Risk engine scored %d detections", res["total"])
+    seed_demo_maintenance()
     ws_manager.bind_loop(asyncio.get_running_loop())
     await asyncio.get_running_loop().run_in_executor(None, models.load)
     logging.getLogger("aerospectra").info("AI model status: %s - %s", models.status, models.detail)
@@ -52,6 +57,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.include_router(router)
+app.include_router(router_v2)
 app.mount("/evidence", StaticFiles(directory=EVIDENCE_DIR), name="evidence")
 app.mount("/recordings", StaticFiles(directory=RECORDING_DIR), name="recordings")
 
@@ -60,7 +66,7 @@ app.mount("/recordings", StaticFiles(directory=RECORDING_DIR), name="recordings"
 async def ws_inspection(ws: WebSocket):
     await ws_manager.connect(ws)
     await ws_manager.send(ws, "connection", {"status": "connected", "active_inspection": runner.snapshot(),
-                                             "ai_model": models.status})
+                                             "ai_model": models.status, "ai": models.info()})
     try:
         while True:
             raw = await ws.receive_text()

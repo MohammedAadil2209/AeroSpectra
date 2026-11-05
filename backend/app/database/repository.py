@@ -9,7 +9,11 @@ from typing import Dict, List, Optional, Sequence
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
 
-from app.models.entities import Aircraft, Detection, Inspection
+from app.models.entities import Aircraft, Detection, Inspection, MaintenanceEvent
+from app.services import cost as cost_engine
+from app.services import maintenance as mx
+from app.services import risk as risk_engine
+from app.services.settings_store import get_value
 
 
 def new_id(prefix: str) -> str:
@@ -201,11 +205,20 @@ def add_detection(db: Session, **fields) -> Detection:
 
 
 def review_detection(
-    db: Session, detection_id: str, status: str, reviewer: Optional[str], notes: Optional[str]
+    db: Session, detection_id: str, status: str, reviewer: Optional[str], notes: Optional[str],
+    category: Optional[str] = None,
 ) -> Optional[Detection]:
     det = db.get(Detection, detection_id)
     if not det:
         return None
+    if category and category != det.category:
+        det.original_category = det.original_category or det.category
+        det.category = category
+        score_detection(db, det)
+    target = mx.status_from_review(status, det.maintenance_status or "detected")
+    if target:
+        ev = mx.apply(det, target, actor=reviewer or "", notes=notes or "Set from review drawer", force=True)
+        db.add(MaintenanceEvent(id=new_id("MXE"), **ev))
     det.review_status = status
     if reviewer is not None:
         det.reviewer = reviewer
@@ -221,7 +234,10 @@ def analytics(db: Session, is_demo: bool) -> dict:
     inspections = db.scalars(select(Inspection).where(Inspection.is_demo == is_demo)).all()
     detections = db.scalars(select(Detection).where(Detection.is_demo == is_demo)).all()
 
-    by_cat = Counter({"crack": 0, "dent": 0, "corrosion": 0})
+    by_cat = Counter({"crack": 0, "dent": 0, "corrosion": 0, "defect": 0})
+    by_risk = Counter({lv: 0 for lv in risk_engine.LEVELS})
+    by_mx = Counter({k: 0 for k in mx.STATUSES})
+    est_lo = est_hi = act = 0.0
     by_status = Counter({"pending": 0, "reviewed": 0, "confirmed": 0, "false_positive": 0})
     by_section: Counter = Counter()
     hist = Counter()
@@ -231,16 +247,33 @@ def analytics(db: Session, is_demo: bool) -> dict:
         by_section[d.section] += 1
         bucket = min(9, int(d.confidence * 10))
         hist[bucket] += 1
+        by_mx[d.maintenance_status or "detected"] += 1
+        if d.review_status != "false_positive" and d.maintenance_status != "false_positive":
+            by_risk[d.risk_level or "low"] += 1
+            est_lo += d.cost_min or 0
+            est_hi += d.cost_max or 0
+            act += d.actual_cost or 0
 
     # Daily trend over the span of the data (max 30 days)
     trend_map: Dict[str, dict] = defaultdict(
-        lambda: {"inspections": 0, "crack": 0, "dent": 0, "corrosion": 0}
+        lambda: {"inspections": 0, "crack": 0, "dent": 0, "corrosion": 0, "defect": 0}
     )
+    oc_map: Dict[str, dict] = defaultdict(lambda: {"detected": 0, "cleared": 0})
     for i in inspections:
         trend_map[i.started_at.date().isoformat()]["inspections"] += 1
     for d in detections:
         trend_map[d.detected_at.date().isoformat()][d.category] += 1
+        if d.review_status != "false_positive":
+            oc_map[d.detected_at.date().isoformat()]["detected"] += 1
+        if d.cleared_at:
+            oc_map[d.cleared_at.date().isoformat()]["cleared"] += 1
     trend = [{"date": k, **v} for k, v in sorted(trend_map.items())][-30:]
+    open_running = 0
+    oc_trend = []
+    for k, v in sorted(oc_map.items()):
+        open_running += v["detected"] - v["cleared"]
+        oc_trend.append({"date": k, "new": v["detected"], "cleared": v["cleared"], "open": open_running})
+    open_n = sum(by_mx[st] for st in mx.OPEN_STATUSES)
 
     return {
         "scope": "demo" if is_demo else "real",
@@ -260,6 +293,165 @@ def analytics(db: Session, is_demo: bool) -> dict:
         "by_section": dict(by_section.most_common()),
         "trend": trend,
         "confidence_histogram": [
-            {"range": f"{b * 10}-{b * 10 + 10}%", "count": hist[b]} for b in range(4, 10)
+            {"range": f"{b * 10}-{b * 10 + 10}%", "count": hist[b]} for b in range(2, 10)
         ],
+        "by_risk": dict(by_risk),
+        "by_maintenance": dict(by_mx),
+        "open_defects": open_n,
+        "cleared_defects": by_mx["cleared"],
+        "open_vs_cleared_trend": oc_trend[-30:],
+        "estimated_cost_min": round(est_lo),
+        "estimated_cost_max": round(est_hi),
+        "actual_cost": round(act),
+        "currency": get_value(db, "cost")["currency"],
     }
+
+
+# ---------------------------------------------------------------- payloads
+def detection_payload(det: Detection) -> dict:
+    from app.schemas.api import DetectionOut
+
+    out = DetectionOut.model_validate(det).model_dump()
+    out["recommendation"] = risk_engine.RECOMMENDATIONS.get(det.risk_level or "low", "")
+    return out
+
+
+def inspection_payload(db: Session, insp: Inspection) -> dict:
+    from app.schemas.api import InspectionOut
+
+    data = InspectionOut.model_validate(insp).model_dump()
+    data["detection_count"] = detection_counts(db, [insp.id]).get(insp.id, 0)
+    return data
+
+
+# ---------------------------------------------------------------- risk + cost
+def score_detection(db: Session, det: Detection, risk_cfg: Optional[dict] = None, cost_cfg: Optional[dict] = None) -> dict:
+    """Compute risk (with clustering/recurrence context from the DB) and cost for one detection."""
+    risk_cfg = risk_cfg or get_value(db, "risk")
+    cost_cfg = cost_cfg or get_value(db, "cost")
+    peers = db.scalars(
+        select(Detection).where(
+            Detection.aircraft_id == det.aircraft_id, Detection.section == det.section, Detection.id != det.id
+        )
+    ).all()
+    n, p = risk_engine.context_counts(det, peers, risk_cfg)
+    r = risk_engine.apply_to(det, risk_cfg, n, p)
+    cost_engine.apply_to(det, cost_cfg)
+    return r
+
+
+def rescore_all(db: Session, is_demo: Optional[bool] = None, risk_cfg: Optional[dict] = None) -> dict:
+    risk_cfg = risk_cfg or get_value(db, "risk")
+    cost_cfg = get_value(db, "cost")
+    stmt = select(Detection)
+    if is_demo is not None:
+        stmt = stmt.where(Detection.is_demo == is_demo)
+    dets = list(db.scalars(stmt).all())
+    changed = risk_engine.rescore(dets, risk_cfg)
+    for d in dets:
+        cost_engine.apply_to(d, cost_cfg)
+    db.flush()
+    live = ({"risk_level": d.risk_level} for d in dets if d.review_status != "false_positive")
+    return {"changed": changed, "total": len(dets), "counts": risk_engine.summarize(live)}
+
+
+def recost_all(db: Session) -> int:
+    cfg = get_value(db, "cost")
+    dets = list(db.scalars(select(Detection)).all())
+    for d in dets:
+        cost_engine.apply_to(d, cfg)
+    db.flush()
+    return len(dets)
+
+
+def risk_preview(db: Session, risk_cfg: dict, is_demo: bool) -> dict:
+    dets = list(db.scalars(select(Detection).where(Detection.is_demo == is_demo)).all())
+    scored = risk_engine.preview(dets, risk_cfg)
+    live = [sc for sc, d in zip(scored, dets) if d.review_status != "false_positive"]
+    return {"counts": risk_engine.summarize(live), "detections": scored}
+
+
+# ---------------------------------------------------------------- maintenance
+def transition(db: Session, det: Detection, to_status: str, **kw) -> MaintenanceEvent:
+    ev = mx.apply(det, to_status, **kw)
+    row = MaintenanceEvent(id=new_id("MXE"), **ev)
+    db.add(row)
+    db.flush()
+    return row
+
+
+def event_payload(e: MaintenanceEvent) -> dict:
+    return {c.name: getattr(e, c.name) for c in e.__table__.columns}
+
+
+def maintenance_events(db: Session, detection_id: Optional[str] = None, aircraft_id: Optional[str] = None) -> List[dict]:
+    stmt = select(MaintenanceEvent)
+    if detection_id:
+        stmt = stmt.where(MaintenanceEvent.detection_id == detection_id)
+    if aircraft_id:
+        stmt = stmt.where(MaintenanceEvent.aircraft_id == aircraft_id)
+    return [event_payload(e) for e in db.scalars(stmt.order_by(MaintenanceEvent.at.desc())).all()]
+
+
+def aircraft_maintenance(db: Session, aircraft_id: str) -> dict:
+    dets = list(
+        db.scalars(select(Detection).where(Detection.aircraft_id == aircraft_id).order_by(Detection.detected_at)).all()
+    )
+    events = maintenance_events(db, aircraft_id=aircraft_id)
+    timeline = [
+        {"kind": "detected", "at": d.detected_at, "detection_id": d.id, "category": d.category, "section": d.section,
+         "risk_level": d.risk_level, "inspection_id": d.inspection_id, "cost_min": d.cost_min, "cost_max": d.cost_max}
+        for d in dets
+    ]
+    timeline += [{"kind": "transition", **e} for e in events]
+    timeline.sort(key=lambda x: x["at"] or datetime.min, reverse=True)
+    sections: Dict[str, dict] = defaultdict(lambda: {"total": 0, "open": 0, "cleared": 0, "inspections": set()})
+    for d in dets:
+        if d.review_status == "false_positive":
+            continue
+        sec = sections[d.section]
+        sec["total"] += 1
+        sec["inspections"].add(d.inspection_id)
+        if d.maintenance_status == "cleared":
+            sec["cleared"] += 1
+        elif d.maintenance_status in mx.OPEN_STATUSES:
+            sec["open"] += 1
+    by_section = [
+        {"section": k, "total": v["total"], "open": v["open"], "cleared": v["cleared"],
+         "inspections": len(v["inspections"]), "recurring": len(v["inspections"]) > 1}
+        for k, v in sorted(sections.items(), key=lambda kv: -kv[1]["total"])
+    ]
+    live = [d for d in dets if d.review_status != "false_positive"]
+    return {
+        "aircraft_id": aircraft_id,
+        "timeline": timeline,
+        "by_section": by_section,
+        "estimated_cost_min": round(sum(d.cost_min or 0 for d in live)),
+        "estimated_cost_max": round(sum(d.cost_max or 0 for d in live)),
+        "actual_cost": round(sum(d.actual_cost or 0 for d in live)),
+        "estimated_labour_hours": round(sum(d.labour_hours or 0 for d in live), 1),
+        "actual_labour_hours": round(sum(d.actual_labour_hours or 0 for d in live), 1),
+        "estimate_vs_actual": [
+            {"detection_id": d.id, "category": d.category, "section": d.section,
+             "estimate_min": d.cost_min, "estimate_max": d.cost_max, "actual": d.actual_cost}
+            for d in live if d.actual_cost is not None
+        ],
+        "open": sum(1 for d in live if d.maintenance_status in mx.OPEN_STATUSES),
+        "cleared": sum(1 for d in live if d.maintenance_status == "cleared"),
+    }
+
+
+def sync_maintenance_from_review(db: Session) -> int:
+    """One-time alignment for pre-v1.1 records: lifecycle status follows the existing review decision."""
+    rows = db.scalars(select(Detection).where(Detection.maintenance_status.in_(["detected", None]))).all()
+    n = 0
+    for d in rows:
+        if d.review_status == "confirmed":
+            d.maintenance_status = "confirmed"
+            n += 1
+        elif d.review_status == "false_positive":
+            d.maintenance_status = "false_positive"
+            n += 1
+        elif d.maintenance_status is None:
+            d.maintenance_status = "detected"
+    return n

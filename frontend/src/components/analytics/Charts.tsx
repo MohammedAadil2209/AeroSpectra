@@ -8,12 +8,12 @@ import type { Analytics, Category, ReviewStatus } from '@/types';
 import { CATEGORIES, CATEGORY_LABEL, REVIEW_LABEL, REVIEW_STATUSES } from '@/utils/labels';
 import { DEFECT_CHART_COLOR } from '@/components/layout/defectMapColors';
 
-const SURFACE = '#ffffff';
-const AXIS = { stroke: 'transparent', tick: { fill: '#66717c', fontSize: 11 }, tickLine: false } as const;
-const GRID = { stroke: 'rgba(0,48,73,0.08)', vertical: false } as const;
+export const SURFACE = '#ffffff';
+export const AXIS = { stroke: 'transparent', tick: { fill: '#66717c', fontSize: 11 }, tickLine: false } as const;
+export const GRID = { stroke: 'rgba(0,48,73,0.08)', vertical: false } as const;
 const REVIEW_COLOR: Record<ReviewStatus, string> = { pending: '#e0a43a', reviewed: '#5c839e', confirmed: '#d3263a', false_positive: '#7a8794' };
 
-function ChartTooltip({ active, payload, label, labelFmt }: TooltipProps<number, string> & { labelFmt?: (l: string) => string }) {
+export function ChartTooltip({ active, payload, label, labelFmt }: TooltipProps<number, string> & { labelFmt?: (l: string) => string }) {
   if (!active || !payload?.length) return null;
   const total = payload.reduce((s, p) => s + (Number(p.value) || 0), 0);
   return (
@@ -60,6 +60,14 @@ export function DetectionTrendChart({ data, height = 240 }: { data: Analytics['t
       <div style={{ height }} className="mt-3">
         <ResponsiveContainer>
           <BarChart data={data} margin={{ top: 4, right: 4, left: -18, bottom: 0 }} barCategoryGap="22%">
+            <defs>
+              {CATEGORIES.map((c) => (
+                <linearGradient key={c} id={`grad-${c}`} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={DEFECT_CHART_COLOR[c]} stopOpacity={0.98} />
+                  <stop offset="100%" stopColor={DEFECT_CHART_COLOR[c]} stopOpacity={0.8} />
+                </linearGradient>
+              ))}
+            </defs>
             <CartesianGrid {...GRID} />
             <XAxis dataKey="date" {...AXIS} tickFormatter={shortDate} minTickGap={18} />
             <YAxis {...AXIS} allowDecimals={false} />
@@ -71,7 +79,7 @@ export function DetectionTrendChart({ data, height = 240 }: { data: Analytics['t
                 dataKey={c}
                 name={CATEGORY_LABEL[c]}
                 stackId="a"
-                fill={DEFECT_CHART_COLOR[c]}
+                fill={`url(#grad-${c})`}
                 stroke={SURFACE}
                 strokeWidth={2}
                 radius={i === CATEGORIES.length - 1 ? [4, 4, 0, 0] : 0}
@@ -90,11 +98,17 @@ export function InspectionsPerDayChart({ data, height = 200 }: { data: Analytics
     <div style={{ height }}>
       <ResponsiveContainer>
         <BarChart data={data} margin={{ top: 4, right: 4, left: -18, bottom: 0 }}>
+          <defs>
+            <linearGradient id="grad-inspections" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#6f95ae" />
+              <stop offset="100%" stopColor="#5c839e" stopOpacity={0.82} />
+            </linearGradient>
+          </defs>
           <CartesianGrid {...GRID} />
           <XAxis dataKey="date" {...AXIS} tickFormatter={shortDate} minTickGap={18} />
           <YAxis {...AXIS} allowDecimals={false} />
           <Tooltip cursor={{ fill: 'rgba(102,155,188,0.08)' }} content={<ChartTooltip labelFmt={shortDate} />} />
-          <Bar isAnimationActive={false} dataKey="inspections" name="Inspections" fill="#5c839e" radius={[4, 4, 0, 0]} maxBarSize={22} />
+          <Bar isAnimationActive={false} dataKey="inspections" name="Inspections" fill="url(#grad-inspections)" radius={[4, 4, 0, 0]} maxBarSize={22} />
         </BarChart>
       </ResponsiveContainer>
     </div>
@@ -176,11 +190,17 @@ export function ConfidenceHistogram({ data }: { data: Analytics['confidence_hist
     <div style={{ height: 200 }}>
       <ResponsiveContainer>
         <BarChart data={data} margin={{ top: 4, right: 4, left: -18, bottom: 0 }} barCategoryGap="12%">
+          <defs>
+            <linearGradient id="grad-confidence" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#6f95ae" />
+              <stop offset="100%" stopColor="#5c839e" stopOpacity={0.8} />
+            </linearGradient>
+          </defs>
           <CartesianGrid {...GRID} />
           <XAxis dataKey="range" {...AXIS} />
           <YAxis {...AXIS} allowDecimals={false} />
           <Tooltip cursor={{ fill: 'rgba(102,155,188,0.08)' }} content={<ChartTooltip />} />
-          <Bar isAnimationActive={false} dataKey="count" name="Detections" fill="#5c839e" radius={[4, 4, 0, 0]} />
+          <Bar isAnimationActive={false} dataKey="count" name="Detections" fill="url(#grad-confidence)" radius={[4, 4, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
     </div>

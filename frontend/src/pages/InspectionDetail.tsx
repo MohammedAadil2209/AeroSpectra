@@ -8,7 +8,7 @@ import { DetectionTable } from '@/components/defects/DetectionTable';
 import { ReportButton } from '@/components/reports/ReportButton';
 import { CategoryDonut } from '@/components/analytics/Charts';
 import { Banner, EmptyState, ErrorState, InspectionStatusChip, KeyValue, Loading, PageHeader, Panel, SourceChip, StatTile } from '@/components/ui/primitives';
-import { fmtDateTime, fmtDuration } from '@/utils/format';
+import { fmtDateTime, fmtDuration, fmtMoneyRange } from '@/utils/format';
 import { DETECTION_MODE_LABEL, SECTIONS } from '@/utils/labels';
 import type { Category } from '@/types';
 
@@ -21,7 +21,7 @@ export default function InspectionDetail() {
   if (!r.data) return <Loading />;
   const i = r.data;
   const d = i.detections;
-  const byCat = d.reduce((acc, x) => ((acc[x.category] = (acc[x.category] ?? 0) + 1), acc), { crack: 0, dent: 0, corrosion: 0 } as Record<Category, number>);
+  const byCat = d.reduce((acc, x) => ((acc[x.category] = (acc[x.category] ?? 0) + 1), acc), { crack: 0, dent: 0, corrosion: 0, defect: 0 } as Record<Category, number>);
 
   return (
     <>
@@ -35,8 +35,14 @@ export default function InspectionDetail() {
       {i.error && <div className="mb-4"><Banner tone="warn">{i.error}</Banner></div>}
       {i.detection_mode === 'none' && <div className="mb-4"><Banner tone="warn">No AI model was loaded for this session — video was processed but no automated detections were made.</Banner></div>}
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+      <div className="grid grid-cols-2 md:grid-cols-6 gap-3 mb-4">
         <StatTile label="Detections" value={d.length} tone="steel" />
+        <StatTile label="Critical / high risk" value={d.filter((x) => x.review_status !== 'false_positive' && (x.risk_level === 'critical' || x.risk_level === 'high')).length} tone="crit" sub="advisory" />
+        <StatTile
+          label="Est. repair cost"
+          value={<span className="text-base">{fmtMoneyRange(d.filter((x) => x.review_status !== 'false_positive').reduce((a, x) => a + (x.cost_min ?? 0), 0), d.filter((x) => x.review_status !== 'false_positive').reduce((a, x) => a + (x.cost_max ?? 0), 0), 'INR', true)}</span>}
+          sub={`${d.filter((x) => x.review_status !== 'false_positive').reduce((a, x) => a + (x.labour_hours ?? 0), 0).toFixed(1)} h · estimate`}
+        />
         <StatTile label="Pending review" value={d.filter((x) => x.review_status === 'pending').length} tone="warn" />
         <StatTile label="Confirmed" value={d.filter((x) => x.review_status === 'confirmed').length} tone="crit" />
         <StatTile label="False positive" value={d.filter((x) => x.review_status === 'false_positive').length} />

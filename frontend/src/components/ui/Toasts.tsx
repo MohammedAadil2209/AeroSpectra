@@ -9,9 +9,13 @@ export function Toasts() {
       {toasts.map((t) => {
         const Icon = { info: Info, ok: CheckCircle2, warn: AlertTriangle, crit: OctagonAlert }[t.tone];
         const tone = { info: 'text-steel', ok: 'text-ok', warn: 'text-warn', crit: 'text-crit' }[t.tone];
+        const accent = { info: 'border-l-steel', ok: 'border-l-ok', warn: 'border-l-warn', crit: 'border-l-crit' }[t.tone];
+        const badge = { info: 'bg-steel/10 border-steel/30', ok: 'bg-ok/10 border-ok/30', warn: 'bg-warn/10 border-warn/30', crit: 'bg-crit/10 border-crit/30' }[t.tone];
         return (
-          <div key={t.id} className="panel shadow-xl shadow-navy/15 px-3.5 py-3 flex gap-3 items-start bg-surface-2">
-            <Icon className={cx('size-4 mt-0.5 shrink-0', tone)} />
+          <div key={t.id} className={cx('panel toast-in shadow-float px-3.5 py-3 flex gap-3 items-start bg-surface/95 backdrop-blur border-l-[3px]', accent)}>
+            <span className={cx('grid size-7 place-items-center rounded-lg border shrink-0', badge)}>
+              <Icon className={cx('size-4', tone)} />
+            </span>
             <div className="flex-1 min-w-0">
               <div className="text-sm font-semibold text-ink">{t.title}</div>
               {t.body && <div className="text-xs text-muted mt-0.5 break-words">{t.body}</div>}

@@ -2,13 +2,15 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Dict, List, Literal, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
-Category = Literal["crack", "dent", "corrosion"]
+Category = Literal["crack", "dent", "corrosion", "defect"]
+RiskLevel = Literal["low", "medium", "high", "critical"]
+MaintenanceStatus = Literal["detected", "confirmed", "work_order", "repair_in_progress", "repaired", "cleared", "false_positive", "deferred"]
 ReviewStatus = Literal["pending", "reviewed", "confirmed", "false_positive"]
-SourceType = Literal["camera", "upload", "simulation"]
+SourceType = Literal["camera", "upload", "simulation", "drone_direct"]
 
 
 class ORMModel(BaseModel):
@@ -47,6 +49,21 @@ class DetectionOut(ORMModel):
     reviewer_notes: str
     reviewed_at: Optional[datetime]
     is_demo: bool
+    risk_score: float = 0.0
+    risk_level: RiskLevel = "low"
+    risk_breakdown: Dict[str, Any] = {}
+    recommendation: str = ""
+    cost_min: float = 0.0
+    cost_max: float = 0.0
+    labour_hours: float = 0.0
+    maintenance_status: MaintenanceStatus = "detected"
+    actual_cost: Optional[float] = None
+    actual_labour_hours: Optional[float] = None
+    repair_photo_url: Optional[str] = None
+    cleared_at: Optional[datetime] = None
+    cleared_by: Optional[str] = None
+    original_category: Optional[str] = None
+    thumb_url: Optional[str] = None
 
 
 class InspectionOut(ORMModel):
@@ -90,6 +107,30 @@ class ReviewIn(BaseModel):
     review_status: ReviewStatus
     reviewer: Optional[str] = None
     reviewer_notes: Optional[str] = None
+    # reviewer may re-classify a generic "defect" (or any category)
+    category: Optional[Category] = None
+
+
+class TransitionIn(BaseModel):
+    to_status: MaintenanceStatus
+    actor: str = ""
+    notes: str = ""
+    reason: str = ""
+    actual_cost: Optional[float] = None
+    actual_labour_hours: Optional[float] = None
+    photo_url: Optional[str] = None
+
+
+class SettingIn(BaseModel):
+    value: Dict[str, Any]
+    actor: str = ""
+    note: str = ""
+    persist: bool = True
+
+
+class AIConfigIn(BaseModel):
+    confidence: Optional[float] = Field(None, ge=0.05, le=0.95)
+    infer_every: Optional[int] = Field(None, ge=1, le=10)
 
 
 class UploadOut(BaseModel):
@@ -125,7 +166,7 @@ class HealthOut(BaseModel):
     version: str
     time: datetime
     database: ComponentStatus
-    ai_model: ComponentStatus
+    ai_model: Dict[str, Any]
     camera: ComponentStatus
     active_inspection_id: Optional[str]
     websocket_clients: int
@@ -147,3 +188,12 @@ class AnalyticsOut(BaseModel):
     by_section: Dict[str, int]
     trend: List[Dict[str, object]]
     confidence_histogram: List[Dict[str, object]]
+    by_risk: Dict[str, int] = {}
+    by_maintenance: Dict[str, int] = {}
+    open_defects: int = 0
+    cleared_defects: int = 0
+    open_vs_cleared_trend: List[Dict[str, object]] = []
+    estimated_cost_min: float = 0.0
+    estimated_cost_max: float = 0.0
+    actual_cost: float = 0.0
+    currency: str = "INR"

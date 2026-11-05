@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Cpu, Database, ExternalLink, Info, Radio, RefreshCw, RotateCcw, Server, Video } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
 import { getApiBase, setApiBase } from '@/services/api';
@@ -49,6 +50,16 @@ export default function Settings() {
   return (
     <>
       <PageHeader eyebrow="Configuration" title="System Settings" subtitle="Connection status, API configuration and application information. No API keys or secrets are stored in the frontend." />
+      <div className="grid sm:grid-cols-2 gap-3 mb-4">
+        <Link to="/roi" className="panel p-4 hover:bg-surface-2 transition-colors">
+          <div className="font-display font-semibold">Cost assumptions →</div>
+          <div className="text-xs text-muted mt-1">Currency (INR default), labour rate, AOG cost, repair cost table, manual vs drone inspection, subscription tiers. Versioned & audited.</div>
+        </Link>
+        <Link to="/risk" className="panel p-4 hover:bg-surface-2 transition-colors">
+          <div className="font-display font-semibold">Risk engine weights →</div>
+          <div className="text-xs text-muted mt-1">Severity, section criticality, thresholds and presets. Advisory scores only.</div>
+        </Link>
+      </div>
       <div className="grid gap-4 lg:grid-cols-2">
         <Panel
           title="System status"

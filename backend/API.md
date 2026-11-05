@@ -34,6 +34,36 @@ Server → client `{type, data, ts}`: `connection`, `pong`, `inspection_started`
 `recording_status`, `frame` (metadata ≈2 Hz — pixels go over MJPEG), `detection`, `detection_reviewed`, `error`.
 Client → server: `{type:"ping"}`, `{type:"telemetry", data:{section}}`.
 
+### v1.1 endpoints
+
+| Method | Path | Notes |
+|---|---|---|
+| GET/POST | `/api/ai` | Runtime AI info (model, device, FP16, inference FPS, confidence) / set `{confidence 0.05–0.95, infer_every}` live |
+| GET | `/api/ai/model-card` · POST `/api/ai/reload` | `backend/models/model_card.json` · reload weights |
+| GET/PUT | `/api/settings/{risk\|cost}` | Versioned settings `{value, actor, note}`; PUT re-scores / re-costs all detections and broadcasts |
+| GET | `/api/settings/{key}/audit` | Who changed what, when (`{path: [old, new]}`) |
+| POST | `/api/risk/preview` | Score all detections of a scope with unsaved weights (live slider preview) |
+| GET | `/api/risk/presets` · POST `/api/risk/rescore` | Conservative / Balanced / Aggressive |
+| GET | `/api/roi?fleet=&inspections_per_month=` | ROI + revenue projection + assumptions (estimates) |
+| GET | `/api/inspections/{id}/costs` | Estimated cost/labour totals of a session |
+| GET | `/api/maintenance/statuses` | Lifecycle states + allowed transitions |
+| POST | `/api/detections/{id}/transition` | `{to_status, actor, notes, reason, actual_cost, actual_labour_hours}` — 422 on illegal transition / missing reason |
+| GET | `/api/detections/{id}/events` · POST `/api/detections/{id}/photo` | Lifecycle history · after-repair photo upload |
+| GET | `/api/aircraft/{id}/maintenance` | Timeline, per-section recurrence, estimated vs actual cost |
+| GET | `/api/drone/status?ip=` | Direct drone link: while a `drone_direct` inspection runs → ip, heartbeat replies, alive, transport, resolution, fps, reconnects, `state` (streaming/reconnecting); otherwise detected IP + warnings + last test |
+| POST | `/api/drone/test` | `{ip?}` heartbeat + grab one frame within 8 s → `{ok, message, preview_jpeg (data URL), width, height, fps, transport, rtsp_reachable, heartbeat_replies, module_id, ...}`; 409 if the drone is in use |
+| POST | `/api/drone/camera` | `{lens: front\|bottom, ip?}` sends `06 01` / `06 02` on UDP 7099; reopens the stream of a running session if needed |
+| POST | `/api/inspections/start` | `source: "drone_direct"` with `camera_uri` = drone IP or `"auto"`; fails fast (≈3 s) with a 400 + reason when no drone |
+| PATCH | `/api/detections/{id}/review` | now also accepts `category` (re-classify; original kept in `original_category`) |
+
+Detections now carry `risk_score, risk_level, risk_breakdown, recommendation, cost_min, cost_max, labour_hours,
+maintenance_status, actual_cost, actual_labour_hours, repair_photo_url, cleared_at, cleared_by, original_category, thumb_url`.
+
+**WebSocket event bus (v1.1)** replaces the v1.0 event names: `inspection.started`, `inspection.updated` (~1 Hz progress),
+`inspection.ended`, `frame` (+ `inference_fps`, `connected`, `reconnects`), `detection.created`, `defect.updated`,
+`maintenance.updated`, `risk.updated`, `settings.updated`, `kpi.updated` (throttled analytics push), `ai.updated`,
+`recording.status`, `error`. See `app/services/events.py`.
+
 ## Behaviour notes
 - **One active inspection at a time** (one drone). Starting a second returns `409`.
 - `source=simulation` → demo records, must use a demo aircraft. `camera|upload` → real records, real aircraft.

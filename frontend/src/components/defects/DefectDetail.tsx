@@ -1,13 +1,16 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Check, Loader2, Save } from 'lucide-react';
-import type { DataScope, Detection, ReviewStatus } from '@/types';
+import type { Category, DataScope, Detection, ReviewStatus } from '@/types';
 import { aircraftService, detectionService } from '@/services/dataService';
 import { useAsync } from '@/hooks/useAsync';
 import { useApp } from '@/context/AppContext';
 import { EvidenceImage } from '@/components/ui/EvidenceImage';
 import { CategoryChip, KeyValue, OriginBadge, PriorityChip, ReviewChip, cx } from '@/components/ui/primitives';
-import { REVIEW_LABEL, REVIEW_STATUSES } from '@/utils/labels';
+import { CATEGORIES, CATEGORY_LABEL, REVIEW_LABEL, REVIEW_STATUSES } from '@/utils/labels';
+import { Advisory, MaintenanceChip, RiskBadge, RiskBreakdownBar } from '@/components/risk/RiskBits';
+import { MaintenancePanel } from './MaintenancePanel';
+import { fmtMoneyRange } from '@/utils/format';
 import { fmtClock, fmtDateTime, pct } from '@/utils/format';
 
 const REVIEWER_KEY = 'aerospectra.reviewer';
@@ -39,16 +42,18 @@ export function DefectDetail({ detection, scope, onUpdated }: { detection: Detec
   const [status, setStatus] = useState<ReviewStatus>(detection.review_status);
   const [reviewer, setReviewer] = useState(detection.reviewer ?? localStorage.getItem(REVIEWER_KEY) ?? '');
   const [notes, setNotes] = useState(detection.reviewer_notes);
+  const [category, setCategory] = useState<Category>(detection.category);
   const [saving, setSaving] = useState(false);
   const ac = useAsync(() => aircraftService.get(detection.aircraft_id, scope), [detection.aircraft_id, scope]);
 
   useEffect(() => {
     setStatus(detection.review_status);
     setNotes(detection.reviewer_notes);
+    setCategory(detection.category);
     setReviewer(detection.reviewer ?? localStorage.getItem(REVIEWER_KEY) ?? '');
   }, [detection]);
 
-  const dirty = status !== detection.review_status || notes !== detection.reviewer_notes || (reviewer || null) !== (detection.reviewer || null);
+  const dirty = category !== detection.category || status !== detection.review_status || notes !== detection.reviewer_notes || (reviewer || null) !== (detection.reviewer || null);
   const fw = detection.bbox.frame_w ?? 0;
   const fh = detection.bbox.frame_h ?? 0;
 
@@ -57,7 +62,7 @@ export function DefectDetail({ detection, scope, onUpdated }: { detection: Detec
     setSaving(true);
     try {
       localStorage.setItem(REVIEWER_KEY, reviewer.trim());
-      const out = await detectionService.review(detection.id, scope, status, reviewer.trim() || null, notes);
+      const out = await detectionService.review(detection.id, scope, status, reviewer.trim() || null, notes, category !== detection.category ? category : undefined);
       onUpdated(out);
       bumpData();
       notify({ tone: 'ok', title: `Review saved · ${REVIEW_LABEL[status]}`, body: detection.id });
@@ -75,9 +80,21 @@ export function DefectDetail({ detection, scope, onUpdated }: { detection: Detec
         <OriginBadge origin={detection.origin} />
         <PriorityChip priority={detection.priority} />
         <ReviewChip status={detection.review_status} />
+        <RiskBadge level={detection.risk_level} score={detection.risk_score} />
+        <MaintenanceChip status={detection.maintenance_status} />
       </div>
       <EvidenceImage url={detection.evidence_url} bbox={detection.bbox} category={detection.category} confidence={detection.confidence} className="border border-line" />
       <Lifecycle d={detection} />
+
+      <div className="rounded-lg border border-line p-4 space-y-3">
+        <div className="flex items-center gap-2">
+          <div className="font-display font-semibold">Why this score</div>
+          <RiskBadge level={detection.risk_level} score={detection.risk_score} />
+          <span className="ml-auto text-xs text-muted" title="Estimate, based on editable assumptions">Est. repair <b className="num text-ink">{fmtMoneyRange(detection.cost_min, detection.cost_max)}</b> · {detection.labour_hours ?? 0} h</span>
+        </div>
+        <RiskBreakdownBar breakdown={detection.risk_breakdown} score={detection.risk_score} level={detection.risk_level} />
+        <Advisory text={detection.recommendation} />
+      </div>
 
       <div className="grid md:grid-cols-2 gap-x-6">
         <div>
@@ -103,6 +120,13 @@ export function DefectDetail({ detection, scope, onUpdated }: { detection: Detec
 
       <div className="rounded-lg border border-line bg-surface-2/50 p-4 space-y-3">
         <div className="font-display font-semibold">Human review</div>
+        <div>
+          <label className="label" htmlFor="recls">Defect type {detection.original_category && <span className="text-faint">(AI reported: {detection.original_category})</span>}</label>
+          <select id="recls" className="field" value={category} onChange={(e) => setCategory(e.target.value as Category)}>
+            {CATEGORIES.map((c) => <option key={c} value={c}>{CATEGORY_LABEL[c]}{c === 'defect' ? ' (generic, unclassified)' : ''}</option>)}
+          </select>
+          {detection.category === 'defect' && <p className="text-[11px] text-faint mt-1">The single-class AI model reports a generic “defect”. Re-classify it as crack, dent or corrosion — the risk score and cost estimate update instantly.</p>}
+        </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2" role="radiogroup" aria-label="Review status">
           {REVIEW_STATUSES.map((s) => (
             <button
@@ -131,6 +155,7 @@ export function DefectDetail({ detection, scope, onUpdated }: { detection: Detec
           </button>
         </div>
       </div>
+      {scope === 'real' || detection.is_demo ? <MaintenancePanel detection={detection} onUpdated={onUpdated} /> : null}
     </div>
   );
 }

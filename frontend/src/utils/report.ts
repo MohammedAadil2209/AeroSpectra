@@ -5,8 +5,11 @@
  */
 import type { InspectionDetail } from '@/types';
 import { mediaUrl } from '@/services/api';
-import { CATEGORY_LABEL, DETECTION_MODE_LABEL, REVIEW_LABEL, SOURCE_LABEL } from './labels';
+import { CATEGORY_LABEL, DETECTION_MODE_LABEL, MAINTENANCE_LABEL, REVIEW_LABEL, RISK_LABEL, SOURCE_LABEL } from './labels';
 import { fmtClock, fmtDateTime, fmtDuration } from './format';
+
+/** jsPDF core fonts lack the rupee glyph: use 'Rs' in the PDF. */
+const money = (v?: number | null) => (v === null || v === undefined ? '-' : `Rs ${Math.round(v).toLocaleString('en-IN')}`);
 
 const NAVY: [number, number, number] = [0, 48, 73];
 const CRIMSON: [number, number, number] = [193, 18, 31];
@@ -14,7 +17,8 @@ const STEEL: [number, number, number] = [102, 155, 188];
 const CREAM: [number, number, number] = [253, 240, 213];
 const INK: [number, number, number] = [25, 32, 38];
 const MUTED: [number, number, number] = [100, 116, 128];
-const CAT_RGB = { crack: [211, 38, 58], dent: [79, 155, 212], corrosion: [175, 145, 26] } as const;
+const CAT_RGB = { crack: [211, 38, 58], dent: [79, 155, 212], corrosion: [175, 145, 26], defect: [31, 143, 124] } as const;
+const RISK_RGB = { low: [110, 130, 145], medium: [190, 130, 20], high: [196, 80, 31], critical: [165, 13, 36] } as const;
 
 async function loadImage(url: string): Promise<{ data: string; w: number; h: number } | null> {
   try {
@@ -65,7 +69,7 @@ export async function generateInspectionReport(insp: InspectionDetail): Promise<
     doc.setFontSize(7);
     doc.setTextColor(...MUTED);
     doc.text(
-      'AI/simulated detections are POTENTIAL defects for human review — not certified maintenance diagnoses.',
+      'Potential defects for human review - not certified diagnoses. Risk scores & costs are ADVISORY estimates.',
       M,
       H - 8,
     );
@@ -125,9 +129,14 @@ export async function generateInspectionReport(insp: InspectionDetail): Promise<
   doc.text(doc.splitTextToSize(secs + (insp.source === 'simulation' ? '  (simulated waypoints)' : ''), W - 2 * M - 38), M + 38, y + 3);
   y += 9;
 
+  const live = dets.filter((d) => d.review_status !== 'false_positive');
+  const rc = (lv: string) => live.filter((d) => (d.risk_level ?? 'low') === lv).length;
+  const costLo = live.reduce((a, d) => a + (d.cost_min ?? 0), 0);
+  const costHi = live.reduce((a, d) => a + (d.cost_max ?? 0), 0);
+  const cleared = dets.filter((d) => d.maintenance_status === 'cleared').length;
   const summary = `${dets.length} potential defect(s) recorded: ${dets.filter((d) => d.category === 'crack').length} crack, ${
     dets.filter((d) => d.category === 'dent').length
-  } dent, ${dets.filter((d) => d.category === 'corrosion').length} corrosion. Review status: ${by('pending')} pending, ${by('reviewed')} reviewed, ${by('confirmed')} confirmed, ${by(
+  } dent, ${dets.filter((d) => d.category === 'corrosion').length} corrosion, ${dets.filter((d) => d.category === 'defect').length} generic defect. Advisory risk: ${rc('critical')} critical, ${rc('high')} high, ${rc('medium')} medium, ${rc('low')} low. Estimated repair cost (estimate, editable assumptions): ${money(costLo)} - ${money(costHi)}. Maintenance: ${cleared} verified & cleared, ${live.length - cleared} open. Review status: ${by('pending')} pending, ${by('reviewed')} reviewed, ${by('confirmed')} confirmed, ${by(
     'false_positive',
   )} false positive.`;
   doc.setFont('helvetica', 'bold');
@@ -151,13 +160,29 @@ export async function generateInspectionReport(insp: InspectionDetail): Promise<
     theme: 'grid',
     headStyles: { fillColor: NAVY, textColor: CREAM, fontSize: 7.5 },
     styles: { fontSize: 7.5, cellPadding: 1.5, lineColor: [220, 226, 230] },
-    head: [['Defect ID', 'Category', 'Conf.', 'Video time', 'Section', 'Origin', 'Review status', 'Reviewer']],
+    head: [['Defect ID', 'Category', 'Conf.', 'Time', 'Section', 'Origin', 'Risk (advisory)', 'Est. cost', 'Maintenance', 'Review']],
     body: dets.length
-      ? dets.map((d) => [d.id, CATEGORY_LABEL[d.category], `${Math.round(d.confidence * 100)}%`, fmtClock(d.video_time_s), d.section, d.origin === 'ai' ? 'AI prediction' : 'Simulated', REVIEW_LABEL[d.review_status], d.reviewer ?? '—'])
-      : [['—', 'No potential defects recorded', '', '', '', '', '', '']],
+      ? dets.map((d) => [
+          d.id,
+          CATEGORY_LABEL[d.category] + (d.original_category ? ` (AI: ${d.original_category})` : ''),
+          `${Math.round(d.confidence * 100)}%`,
+          fmtClock(d.video_time_s),
+          d.section,
+          d.origin === 'ai' ? 'AI' : 'Simulated',
+          `${RISK_LABEL[d.risk_level ?? 'low']} ${Math.round(d.risk_score ?? 0)}`,
+          d.cost_max ? `${money(d.cost_min)}-${money(d.cost_max).replace('Rs ', '')}` : '-',
+          MAINTENANCE_LABEL[d.maintenance_status ?? 'detected'] + (d.cleared_at ? ` ${fmtDateTime(d.cleared_at)}` : ''),
+          REVIEW_LABEL[d.review_status] + (d.reviewer ? ` (${d.reviewer})` : ''),
+        ])
+      : [['-', 'No potential defects recorded', '', '', '', '', '', '', '', '']],
     didParseCell: (c) => {
-      if (c.section === 'body' && c.column.index === 1 && dets[c.row.index]) {
-        c.cell.styles.textColor = [...CAT_RGB[dets[c.row.index].category]] as [number, number, number];
+      const d = dets[c.row.index];
+      if (c.section === 'body' && d && c.column.index === 1) {
+        c.cell.styles.textColor = [...CAT_RGB[d.category]] as [number, number, number];
+        c.cell.styles.fontStyle = 'bold';
+      }
+      if (c.section === 'body' && d && c.column.index === 6) {
+        c.cell.styles.textColor = [...RISK_RGB[d.risk_level ?? 'low']] as [number, number, number];
         c.cell.styles.fontStyle = 'bold';
       }
     },
@@ -178,7 +203,7 @@ export async function generateInspectionReport(insp: InspectionDetail): Promise<
     for (const d of dets.slice(0, 24)) {
       const img = await loadImage(mediaUrl(d.evidence_url) ?? '');
       const ih = colW * (9 / 16);
-      const blockH = ih + 25;
+      const blockH = ih + 33;
       if (ey + blockH > H - 14) {
         doc.addPage();
         header();
@@ -215,9 +240,20 @@ export async function generateInspectionReport(insp: InspectionDetail): Promise<
       doc.setFontSize(7.5);
       doc.setTextColor(...MUTED);
       doc.text(`${d.section} · video ${fmtClock(d.video_time_s)} · ${REVIEW_LABEL[d.review_status]}${d.reviewer ? ` by ${d.reviewer}` : ''}`, x, ey + ih + 9.5);
+      const rl = d.risk_level ?? 'low';
+      doc.setTextColor(...(RISK_RGB[rl] as unknown as [number, number, number]));
+      doc.setFont('helvetica', 'bold');
+      doc.text(`Risk ${Math.round(d.risk_score ?? 0)}/100 ${RISK_LABEL[rl].toUpperCase()} (advisory) · est. ${money(d.cost_min)}-${money(d.cost_max)} · ${d.labour_hours ?? 0} h`, x, ey + ih + 13.5);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(...MUTED);
+      const mx = MAINTENANCE_LABEL[d.maintenance_status ?? 'detected'];
+      doc.text(
+        `Maintenance: ${mx}${d.cleared_at ? ` ${fmtDateTime(d.cleared_at)} by ${d.cleared_by ?? '-'}` : ''}${d.actual_cost ? ` · actual ${money(d.actual_cost)}` : ''}`,
+        x, ey + ih + 17.5,
+      );
       doc.setTextColor(...INK);
-      const n = doc.splitTextToSize(d.reviewer_notes ? `Notes: ${d.reviewer_notes}` : 'Notes: —', colW);
-      doc.text(n.slice(0, 3), x, ey + ih + 14);
+      const n = doc.splitTextToSize(d.reviewer_notes ? `Notes: ${d.reviewer_notes}` : (d.recommendation ?? 'Notes: -'), colW);
+      doc.text(n.slice(0, 3), x, ey + ih + 22);
       col++;
       if (col === 2) {
         col = 0;

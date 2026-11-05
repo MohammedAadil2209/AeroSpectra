@@ -22,7 +22,7 @@ function useDebounced<T>(v: T, ms = 300) {
 }
 
 function toCsv(rows: Detection[]) {
-  const head = ['id', 'aircraft_id', 'inspection_id', 'category', 'confidence', 'detected_at', 'video_time_s', 'section', 'priority', 'origin', 'review_status', 'reviewer', 'reviewer_notes', 'is_demo'];
+  const head = ['id', 'aircraft_id', 'inspection_id', 'category', 'confidence', 'detected_at', 'video_time_s', 'section', 'priority', 'origin', 'review_status', 'reviewer', 'reviewer_notes', 'risk_score', 'risk_level', 'cost_min', 'cost_max', 'labour_hours', 'maintenance_status', 'actual_cost', 'cleared_at', 'cleared_by', 'original_category', 'is_demo'];
   const esc = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
   return [head.join(','), ...rows.map((r) => head.map((h) => esc(r[h as keyof Detection])).join(','))].join('\n');
 }

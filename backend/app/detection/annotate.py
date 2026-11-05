@@ -14,6 +14,7 @@ COLORS = {
     "crack": (58, 38, 211),
     "dent": (212, 155, 79),
     "corrosion": (26, 145, 175),
+    "defect": (176, 201, 65),  # #41C9B0 teal - generic single-class model output
 }
 
 
@@ -29,7 +30,8 @@ def draw_detections(frame: np.ndarray, dets: Iterable[RawDetection]) -> None:
             cv2.line(frame, (cx, cy), (cx + dx * t, cy), color, 4, cv2.LINE_AA)
             cv2.line(frame, (cx, cy), (cx, cy + dy * t), color, 4, cv2.LINE_AA)
         tag = "SIM" if d.origin == "simulated" else "AI"
-        label = f"{tag} {d.category.upper()} {d.confidence * 100:.0f}%"
+        risk = (d.extra or {}).get("risk_level")
+        label = f"{tag} {d.category.upper()} {d.confidence * 100:.0f}%" + (f" | {str(risk).upper()}" if risk else "")
         (tw, th), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.55, 1)
         ly = max(th + 8, y0)
         cv2.rectangle(frame, (x0, ly - th - 8), (x0 + tw + 10, ly), color, -1)
